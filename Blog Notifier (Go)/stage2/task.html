@@ -1,0 +1,93 @@
+<h2>Description</h2>
+
+<p>There are lots of good blogs that we would like to follow. But how do we keep track of our favorite blogs. In this stage we will create a watch list for our favorite blogs and store that list into a database.  In the second stage, you will develop the functionality to create and migrate a database schema and implement methods for CRUD operations to manage table records. The database must have the following schema:</p>
+
+<h4>Database schema</h4>
+
+<p>The database must have the tables titled <code>blogs</code>, <code>posts</code> and <code>mails</code> .</p>
+
+<p>The <code>blogs</code> table must have the columns:</p>
+
+<ul>
+  <li>site            VARCHAR(256) PRIMARY KEY</li>
+  <li>last_link    VARCHAR(256)</li>
+</ul>
+
+<p>The <code>posts</code> table must have the columns:</p>
+
+<ul>
+  <li>site    VARCHAR(256)</li>
+  <li>link    VARCHAR(256)</li>
+</ul>
+
+<p><code>site</code> in the <code>posts</code> table  references <code>site</code> in the <code>blogs</code> table, and should implement ON DELETE CASCADE (when a blog site is deleted from the <code>blogs</code> table all the corresponding posts in the <code>posts</code> table must be <strong>deleted</strong> as well)</p>
+
+<p>The <code>mails</code> table must have the columns:</p>
+
+<ul>
+  <li>id             INTEGER PRIMARY KEY AUTOINCREMENT</li>
+  <li>mail        TEXT</li>
+  <li>is_sent    INTEGER DEFAULT 0</li>
+</ul>
+
+<h2>Objectives</h2>
+
+<p>In this stage, you will</p>
+
+<ul>
+  <li>Implement <code>--migrate</code> sub-command for this CLI. This sub-command should create database tables with the following schema.</li>
+  <li>Implement <code>--explore</code> sub-command for this CLI. This sub-command takes web address of the blog and inserts a new entry into the <code>blogs</code> table of the database. kind of like adding a blog site to a watch list.</li>
+  <li>Implement <code>--list</code> sub-command for this CLI. This sub-command lists all the blog sites that are in the <code>blogs</code> table. Kind of like listing all the blog sites that are currently in the watch list.</li>
+  <li>Implement <code>updateLastLink</code> sub-command for this CLI. This sub-command takes web address of the blog let's call it <code>blogAddr</code> and also the web address of the blog post let's call it <code>postAddr</code> and then updates the <code>last_link</code> column with value equal to the <code>postAddr</code> in the <code>blogs</code> table where <code>site</code> equals <code>blogAddr</code> with the</li>
+  <li>Implement <code>--remove</code> sub-command for this CLI. This sub-command takes web address of the blog and deletes that entry from the blogs table, if it exists. kind of like removing a blog site from the watch list.</li>
+</ul>
+
+<h2>Examples</h2>
+
+<p>In this stage your program will be tested for the sub-command, <code>--migrate</code> <code>--explore</code>, <code>--list</code>, <code>--lastLink</code>, <code>--remove</code>, as follows:</p>
+
+<h4>Testing for the sub-command <code>--migrate</code></h4>
+
+<p>Your program must must create a database with file named <code>blogs.sqlite</code> with the schema described above, when the <code>--migrate</code> sub-command is run</p>
+
+<pre><code class="language-bash">blognotifier --migrate</code></pre>
+
+<h4>Testing for the sub-command <code>--explore</code></h4>
+
+<p>When the <code>blognotifier --explore "https://hyperskill.org/blog/"</code> sub-command is run, your program must add an entry with <code>site</code> and <code>last_link</code> equal to <code>"https://hyperskill.org/blog/"</code>, into the <code>blogs</code> table of the database.</p>
+
+<h4>Testing for the sub-command <code>--list</code></h4>
+
+<p>When the <code>blognotifier --list</code> sub-command is run, your program must output all the entries that are currently in the blogs table of the database in the following format: <code>&lt;site&gt; &lt;last_link&gt;</code>, replace <code>&lt;site&gt;</code>, and <code>&lt;last_link&gt;</code> with the <code>site</code> and the <code>last_link</code> columns for each entry in the blogs database. For example, let's say we have the following entries currently in the blogs table of the database:</p>
+
+<table border="1" cellpadding="1" cellspacing="1" style="width: 500px;">
+  <thead>
+  <tr>
+    <th>site</th>
+    <th>last_link</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>https://blog1.com</td>
+    <td>https://blog1.com/post100</td>
+  </tr>
+  <tr>
+    <td>https://blog2.com</td>
+    <td>https://blog2.com/post1</td>
+  </tr>
+  </tbody>
+</table>
+
+<p> your program must output the following to the <code>stdout</code>:</p>
+
+<pre><code>https://blog1.com https://blog1.com/post100
+https://blog2.com https://blog2.com/post1</code></pre>
+
+<h4> Testing for the sub-command <code>updateLastLink</code></h4>
+
+<p>When the <code>blognotifier updateLastLink --site "blogSite" --post "newPost"</code> sub-command is run, your program must update the <code>blogs</code> table in the database, by updating the <code>last_link</code> column with the value <code>newPost</code> where <code>site</code> equals <code>blogSite</code>.</p>
+
+<h4> Testing for the sub-command <code>--remove</code></h4>
+
+<p>When the <code>blognotifier --remove "blogSite"</code> sub-command is run, your program must remove the entry in the <code>blogs</code> table in the database where <code>site</code> equals <code>blogSite</code>.</p>

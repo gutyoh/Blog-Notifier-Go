@@ -1,0 +1,24 @@
+<h2>Description</h2>
+
+<p>In the third stage, you will create a new CLI sub-command for recursive website crawling to extract all the links with in the website</p>
+
+<h2>Objectives</h2>
+
+<p>In this stage, you need to implement <code>--crawlSite</code> sub-command for this CLI. This sub-command takes a webpage's URL, perform recursive website crawling to extract all links, and display the unique links on the standard output (stdout). The maximum depth of recursion should be limited to 3.</p>
+
+<h2>Examples</h2>
+
+<p>In this stage your program will be tested for the sub-command <code>--crawlSite</code>, as follows:</p>
+
+<pre><code>blognotifier --crawlSite "https://brianpzaide.github.io/blog-notifier/"</code></pre>
+
+<p> Your program must output the following to the <code>stdout</code>:</p>
+
+<pre><code>https://brianpzaide.github.io/blog-notifier/a.html
+https://brianpzaide.github.io/blog-notifier/b.html
+https://brianpzaide.github.io/blog-notifier/c.html
+https://brianpzaide.github.io/blog-notifier/d.html
+https://brianpzaide.github.io/blog-notifier/e.html
+https://brianpzaide.github.io/blog-notifier/f.html</code></pre>
+
+<p>We will be evaluating your code on a simple website for testing purposes. You can find a sample of the website <a href="https://brianpzaide.github.io/blog-notifier" rel="noopener noreferrer nofollow">here</a>. At this stage of the project, the primary objective is to practice writing Golang code effectively.</p>
