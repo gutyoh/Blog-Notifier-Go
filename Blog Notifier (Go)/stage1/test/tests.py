@@ -1,5 +1,7 @@
 import os
+import random
 
+import yaml
 from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 
 
@@ -86,7 +88,64 @@ class TestBlogNotifierCLI(StageTest):
         return CheckResult.correct()
 
     @dynamic_test
-    def test3_invalid_yaml_file(self):
+    def test3_random_yaml_file(self):
+        _mode = {'mode': random.choice(['mail', 'telegram'])}
+
+        _server = {'server': {
+            'host': f'https://{''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.com',
+            'port': random.randint(2500, 8080)}
+        }
+
+        _client = {'client':{
+            'email':f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}',
+            'password':f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
+            'send_to':f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}'
+        }}
+
+        _telegram = {'telegram':{
+            'bot_token': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
+            'channel': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=6))}'
+        }}
+
+        config_map = {}
+        config_map.update(**_mode, **_server, **_client, **_telegram)
+
+        yaml_content = yaml.dump(config_map)
+
+        # yaml_content_2 = ("mode: telegram\n"
+        #                   "server:\n"
+        #                   "  host: 127.0.0.1\n"
+        #                   "  port: 2500\n"
+        #                   "client:\n"
+        #                   "  email: sender@example.com\n"
+        #                   "  password: secret\n"
+        #                   "  send_to: recipient@example.net\n"
+        #                   "telegram:\n"
+        #                   "  bot_token: abcd1234\n"
+        #                   "  channel: mychannel")
+        self.create_yaml_file('credentials.yaml', yaml_content)
+
+        program = TestedProgram()
+        output = program.start('--config', 'credentials.yaml').strip()
+
+        # Remove the created YAML file
+        self.remove_yaml_file('credentials.yaml')
+
+        expected_output = (f"mode: {_mode['mode']}\n"
+                           f"email_server: {_server['server']['host']}:{_server['server']['port']}\n"
+                           f"client: {_client['client']['email']} {_client['client']['password']} {_client['client']['send_to']}\n"
+                           f"telegram: {_telegram['telegram']['bot_token']}@{_telegram['telegram']['channel']}")
+
+        if output != expected_output:
+            return CheckResult.wrong(
+                f"The output of the program does not match the expected output for the second YAML file."
+                f"\nYour program output: {output}"
+                f"\nExpected output: {expected_output}")
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test4_invalid_yaml_file(self):
         program = TestedProgram()
         output = program.start('--config', 'nonexistent.yaml').lower().strip()
         expected_error = "file 'nonexistent.yaml' not found"
@@ -98,7 +157,7 @@ class TestBlogNotifierCLI(StageTest):
         return CheckResult.correct()
 
     @dynamic_test
-    def test4_no_command_input(self):
+    def test5_no_command_input(self):
         program = TestedProgram()
         output = program.start().lower().strip()
         expected_error = "no command input specified"
