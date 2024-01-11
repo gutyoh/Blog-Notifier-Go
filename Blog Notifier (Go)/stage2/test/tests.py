@@ -1,120 +1,142 @@
-# TODO -- WE NEED TO ADD THE CORRECT TESTS FOR STAGE 2
-
 import os
 
-from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
+from hstest import StageTest, TestedProgram, CheckResult, dynamic_test, WrongAnswer
 
-
+DB_FILE = 'blogs.sqlite3'
 class TestBlogNotifierCLI(StageTest):
 
     @staticmethod
-    def create_yaml_file(file_name, content):
-        with open(file_name, 'w') as file:
-            file.write(content)
-
-    @staticmethod
-    def remove_yaml_file(file_name):
-        if os.path.exists(file_name):
-            os.remove(file_name)
+    def remove_db_file():
+        print(os.curdir)
+        if os.path.exists(DB_FILE):
+            os.remove(DB_FILE)
 
     @dynamic_test
-    def test1_valid_credentials_yaml(self):
-        # Create the first YAML file
-        yaml_content_1 = ("mode: mail\n"
-                          "server:\n"
-                          "  host: smtp.gmail.com\n"
-                          "  port: 465\n"
-                          "client:\n"
-                          "  email: sender@example.com\n"
-                          "  password: 123456\n"
-                          "  send_to: recipient@example.net\n"
-                          "telegram:\n"
-                          "  bot_token: abcdef123456\n"
-                          "  channel: mychannel")
-        self.create_yaml_file('credentials.yaml', yaml_content_1)
-
+    def test1_migrate_command(self):
+        # Test the --migrate sub-command which creates the blogs.sqlite3 database and tables
         program = TestedProgram()
-        output = program.start('--config', 'credentials.yaml').strip()
+        output = program.start("--migrate").strip().lower()
 
-        # Remove the created YAML file
-        self.remove_yaml_file('credentials.yaml')
+        if "database 'blogs.sqlite3' created successfully" not in output:
+            raise WrongAnswer("The --migrate command did not report successful creation of the database.")
 
-        expected_output = ("mode: mail\n"
-                           "email_server: smtp.gmail.com:465\n"
-                           "client: sender@example.com 123456 recipient@example.net\n"
-                           "telegram: abcdef123456@mychannel")
+        if "tables 'blogs', 'posts', and 'mails' initialized" not in output:
+            raise WrongAnswer("The --migrate command did not report successful initialization of the tables.")
 
-        if output != expected_output:
-            return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the first YAML file."
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_output}")
+        self.remove_db_file()
 
         return CheckResult.correct()
 
     @dynamic_test
-    def test2_valid_credentials_yaml(self):
-        # Create the second YAML file
-        yaml_content_2 = ("mode: telegram\n"
-                          "server:\n"
-                          "  host: 127.0.0.1\n"
-                          "  port: 2500\n"
-                          "client:\n"
-                          "  email: sender@example.com\n"
-                          "  password: secret\n"
-                          "  send_to: recipient@example.net\n"
-                          "telegram:\n"
-                          "  bot_token: abcd1234\n"
-                          "  channel: mychannel")
-        self.create_yaml_file('credentials.yaml', yaml_content_2)
-
+    def test2_explore_command(self):
+        # Test the --explore sub-command which adds a new blog to the watch list
         program = TestedProgram()
-        output = program.start('--config', 'credentials.yaml').strip()
+        program.start("--migrate")
+        program = TestedProgram()
+        output = program.start('--explore', 'https://hyperskill.org/blog/').strip()
 
-        # Remove the created YAML file
-        self.remove_yaml_file('credentials.yaml')
+        if "New blog added to watchlist" not in output:
+            raise WrongAnswer("The --explore command did not report adding a new blog to the watch list.")
 
-        expected_output = ("mode: telegram\n"
-                           "email_server: 127.0.0.1:2500\n"
-                           "client: sender@example.com secret recipient@example.net\n"
-                           "telegram: abcd1234@mychannel")
-
-        if output != expected_output:
-            return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the second YAML file."
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_output}")
+        if "site: https://hyperskill.org/blog/" not in output or "last link: https://hyperskill.org/blog/" not in output:
+            raise WrongAnswer("The --explore command did not output the correct blog information.")
 
         return CheckResult.correct()
 
     @dynamic_test
-    def test3_invalid_yaml_file(self):
+    def test3_edge_cases(self):
+        # Test the --explore sub-command which adds a blog to the watch list
         program = TestedProgram()
-        output = program.start('--config', 'nonexistent.yaml').lower().strip()
-        expected_error = "file 'nonexistent.yaml' not found"
-        if 'not found' not in output or not program.is_finished():
-            return CheckResult.wrong(
-                f"The program should print a message mentioning YAML file was not found. "
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_error}")
+        program.start("--migrate")
+        program = TestedProgram()
+        program.start('--explore', 'https://blog1.com')
+        program = TestedProgram()
+        output = program.start('--explore', 'https://blog1.com').strip()
+
+        if "https://blog1.com already exists in the watch list" not in output:
+            raise WrongAnswer("The --explore command did not report the correct message on adding a blog that is already in the watch list.")
+
+        self.remove_db_file()
+
         return CheckResult.correct()
 
     @dynamic_test
-    def test4_no_command_input(self):
+    def test4_list_command(self):
+        # Test the --list sub-command which lists all blog sites in the watch list
         program = TestedProgram()
-        output = program.start().lower().strip()
-        expected_error = "no command input specified"
+        program.start("--migrate")
+        program = TestedProgram()
+        program.start('--explore','https://blog1.com')
+        program = TestedProgram()
+        program.start('--explore','https://blog2.com')
+        program = TestedProgram()
+        output = program.start("--list").strip()
 
-        if ('no command' not in output and 'specified' not in output) and not program.is_finished():
-            return CheckResult.wrong(
-                f"The program should print a message mentioning no command input was specified. "
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_error}")
+        if "https://blog1.com https://blog1.com" not in output or "https://blog2.com https://blog2.com" not in output:
+            raise WrongAnswer("The --list command did not list all the blog sites in the watch list correctly.")
+
+        self.remove_db_file()
+
         return CheckResult.correct()
 
-    # Additional edge case tests can be added here ...
+    @dynamic_test
+    def test5_update_last_link_command(self):
+        # Test the --update-last-link sub-command which updates the last link of a blog site
+        program = TestedProgram()
+        program.start("--migrate")
+        program = TestedProgram()
+        program.start('--explore', 'https://blog1.com')
+        program = TestedProgram()
+        output = program.start('update-last-link', '--site', 'https://blog1.com', '--post', 'https://blog1.com/post200').strip()
 
+        if "The last link for https://blog1.com updated to https://blog1.com/post200" not in output:
+            raise WrongAnswer("The --update-last-link command did not report the correct update message.")
 
-# Run the test cases
+        program = TestedProgram()
+        output = program.start("--list").strip().lower()
+
+        if "https://blog1.com https://blog1.com/post200" not in output:
+            raise WrongAnswer("The --list command shows wrong output, seams that 'update-last-link' sub-command was not implemented correctly")
+
+        self.remove_db_file()
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test6_remove_command(self):
+        # Test the --remove sub-command which removes a blog from the watch list
+        program = TestedProgram()
+        program.start("--migrate")
+        program = TestedProgram()
+        program.start('--explore', 'https://blog1.com')
+        program = TestedProgram()
+        output = program.start('--remove', 'https://blog1.com').strip()
+
+        if "https://blog1.com removed from the watch list." not in output:
+            raise WrongAnswer("The --remove command did not report the correct removal message.")
+
+        program = TestedProgram()
+        output = program.start("--list").strip()
+
+        if "https://blog1.com https://blog1.com" in output:
+            raise WrongAnswer("The --list command shows wrong output, seams that '--remove' flag was not implemented correctly")
+
+        self.remove_db_file()
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test7_edge_cases(self):
+        # Test edge cases like removing a non-existent blog site
+        program = TestedProgram()
+        program.start("--migrate")
+        program = TestedProgram()
+        output = program.start('--remove', 'https://nonexistentblog.com').strip()
+
+        if "https://nonexistentblog.com does not exist in the watch list" not in output:
+            raise WrongAnswer("The --remove command did not handle non-existent blog sites correctly.")
+
+        return CheckResult.correct()
+
 if __name__ == '__main__':
     TestBlogNotifierCLI().run_tests()
