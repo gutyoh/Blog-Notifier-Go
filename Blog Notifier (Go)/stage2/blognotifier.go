@@ -13,12 +13,12 @@ import (
 const (
 	BLOGS_DB           = "./blogs.sqlite3"
 	CREATE_BLOGS_TABLE = `CREATE TABLE IF NOT EXISTS blogs (
-		site                    VARCHAR(256) PRIMARY KEY,
-		last_link               VARCHAR(256)
+		site                    TEXT PRIMARY KEY,
+		last_link               TEXT
 	)`
 	CREATE_POSTS_TABLE = `CREATE TABLE IF NOT EXISTS posts (
-		site    VARCHAR(256),
-		link    VARCHAR(256),
+		site    TEXT,
+		link    TEXT,
 		FOREIGN KEY (site) REFERENCES blogs(site) ON DELETE CASCADE
 	)`
 	CREATE_MAILS_TABLE = `CREATE TABLE IF NOT EXISTS mails (
