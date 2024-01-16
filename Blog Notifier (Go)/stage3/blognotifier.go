@@ -3,10 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/PuerkitoBio/goquery"
+	"net/http"
 )
 
 const MAX_DEPTH = 3
@@ -45,7 +43,7 @@ func findAllLinks(site string) ([]string, error) {
 
 // recursive crawl function
 func _crawl(link string, links *[]string, depth int) error {
-	if depth > MAX_DEPTH {
+	if depth >= MAX_DEPTH {
 		return nil
 	}
 	_links, err := findAllLinks(link)
@@ -94,10 +92,12 @@ func main() {
 	if *crawlFlag != "" {
 		_links, err := crawl(*crawlFlag)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err.Error())
+			return
 		}
 		if len(_links) == 0 {
 			fmt.Printf("No blog posts found for %s\n", *crawlFlag)
+			return
 		}
 		for _, _link := range _links {
 			fmt.Println(_link)
