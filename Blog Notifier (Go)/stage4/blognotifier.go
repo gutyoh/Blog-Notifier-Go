@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
@@ -154,7 +153,6 @@ func addNewPostIfNotExist(site, link string) (bool, error) {
 	if err != nil {
 		fmt.Println(err.Error())
 		if err == sql.ErrNoRows {
-			fmt.Println("the error is sql.ErrNoRows")
 			_, err = db.Exec(ADD_NEW_POST, site, link)
 			if err == nil {
 				return true, err
@@ -246,7 +244,6 @@ func removeSite(site string) error {
 		defer db.Close()
 		_, err = db.Exec(REMOVE_SITE, site)
 		if err != nil {
-			fmt.Printf("error deleting a site %s from the blogs table\n", site)
 			return err
 		}
 		return nil
@@ -269,10 +266,8 @@ func updateLastSiteVisited(site, link string) error {
 		_, err = db.Exec(UPDATE_BLOG, link, site)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				fmt.Printf("%s does not exist in the watchlist", site)
 				return nil
 			}
-			fmt.Printf("error updating last_link %s for blog %s in the blogs table\n", link, site)
 			return err
 		}
 		return nil
@@ -373,6 +368,9 @@ func crawl() (map[string][]string, error) {
 	siteLinksMap := make(map[string][]string)
 
 	for linksSlice := range postsCh {
+		if len(linksSlice) == 0 {
+			continue
+		}
 		blog := linksSlice[0].site
 		_, ok := siteLinksMap[blog]
 		if !ok {
@@ -429,8 +427,6 @@ func main() {
 		flagLastLink = updateFlag.String("post", "", "web address of the latest blog post")
 		flagSite     = listPostsFlag.String("site", "", "web address of the blog site")
 	)
-
-	fmt.Println(strings.Join(os.Args, " "))
 
 	// Check if command and flags are provided
 	if len(os.Args) < 2 {

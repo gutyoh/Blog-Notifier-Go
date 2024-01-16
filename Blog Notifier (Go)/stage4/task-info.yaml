@@ -12,3 +12,9 @@ files:
     visible: true
   - name: go.sum
     visible: true
+  - name: test/blognotifier_test_utils.py
+    visible: true
+  - name: stage4.exe
+    visible: true
+  - name: blogs.sqlite3
+    visible: true
