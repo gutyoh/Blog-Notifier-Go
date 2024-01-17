@@ -45,9 +45,9 @@ const (
 	FETCH_POSTS_FOR_BLOG = `SELECT link FROM posts WHERE site = ?`
 )
 
-type blogPostsLink struct {
-	site string
-	link string
+type blogPostsLinks struct {
+	site  string
+	links []string
 }
 
 // Getting database connection, It is important to note that To enable foreign key support in SQLite,
@@ -151,7 +151,6 @@ func addNewPostIfNotExist(site, link string) (bool, error) {
 	err = row.Scan(&i)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		if err == sql.ErrNoRows {
 			_, err = db.Exec(ADD_NEW_POST, site, link)
 			if err == nil {
@@ -279,7 +278,7 @@ func updateLastSiteVisited(site, link string) error {
 func findAllLinks(site string) ([]string, error) {
 	res, err := http.Get(site)
 	if err != nil {
-		return nil, fmt.Errorf("could not reach the site: %s", site)
+		return nil, err //fmt.Errorf("could not reach the site: %s", site)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
@@ -308,14 +307,11 @@ func findAllLinks(site string) ([]string, error) {
 }
 
 // recursive crawl function
-func _crawl(site, link string, links *[]blogPostsLink) error {
+func _crawl(site, link string, links *[]string) error {
 	_links, err := findAllLinks(link)
 	if err == nil {
 		for _, _link := range _links {
-			*links = append(*links, blogPostsLink{
-				site: site,
-				link: _link,
-			})
+			*links = append(*links, _link)
 			err := _crawl(site, _link, links)
 			if err != nil {
 				return fmt.Errorf("%s: error in recursive crawl", site)
@@ -334,24 +330,29 @@ func crawl() (map[string][]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error fetching items from blogs table\n")
 	}
-
-	postsCh := make(chan []blogPostsLink)
-	errCh := make(chan error)
+	postsCh := make(chan blogPostsLinks, len(blogs))
+	errCh := make(chan error, len(blogs))
+	doneCh := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 
 	for _, blog := range blogs {
 		wg.Add(1)
 		go func(site string) {
 			defer wg.Done()
-			links := make([]blogPostsLink, 0)
+			links := make([]string, 0)
 			err := _crawl(site, site, &links)
 			if err != nil {
 				errCh <- err
+				return
 			} else {
-				postsCh <- links
+				linksForSite := blogPostsLinks{
+					site:  site,
+					links: links,
+				}
+				postsCh <- linksForSite
 			}
 			if n := len(links) - 1; n > 0 {
-				err = updateLastSiteVisited(site, links[n].link)
+				err = updateLastSiteVisited(site, links[n])
 				if err != nil {
 					errCh <- err
 				}
@@ -363,51 +364,54 @@ func crawl() (map[string][]string, error) {
 		wg.Wait()
 		close(postsCh)
 		close(errCh)
+		close(doneCh)
 	}()
 
 	siteLinksMap := make(map[string][]string)
 
-	for linksSlice := range postsCh {
-		if len(linksSlice) == 0 {
-			continue
-		}
-		blog := linksSlice[0].site
-		_, ok := siteLinksMap[blog]
-		if !ok {
-			siteLinksMap[blog] = make([]string, 0)
-		}
-		for _, link := range linksSlice {
-			siteLinksMap[blog] = append(siteLinksMap[blog], link.link)
+	for {
+		select {
+		case blogLinks, is_open := <-postsCh:
+			if !is_open {
+				postsCh = nil
+			} else {
+				siteLinksMap[blogLinks.site] = blogLinks.links
+			}
+		case err, is_open := <-errCh:
+			if !is_open {
+				errCh = nil
+			} else {
+
+				fmt.Println(err)
+			}
+		case <-doneCh:
+			return siteLinksMap, nil
 		}
 	}
-	for err := range errCh {
-		fmt.Println(err)
-	}
-	return siteLinksMap, nil
 }
 
-func run() error {
+func run() (map[string][]string, error) {
 	// crawl
-	site_links_map, err := crawl()
+	siteLinksMap, err := crawl()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// update the database for the new posts
-	for blog, posts := range site_links_map {
+	for blog, posts := range siteLinksMap {
 		for _, post := range posts {
 			ok, err := addNewPostIfNotExist(blog, post)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if ok {
 				err = addMail(blog, post)
 				if err != nil {
-					return err
+					return nil, err
 				}
 			}
 		}
 	}
-	return nil
+	return siteLinksMap, nil
 }
 
 func main() {
@@ -478,8 +482,13 @@ func main() {
 			return
 		}
 		if *crawlFlag {
-			if err := run(); err != nil {
-				log.Fatal(err)
+			siteLinksMap, err := run()
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+			for blog, posts := range siteLinksMap {
+				fmt.Printf("Number of new blog-posts discovered for the site %s: %d", blog, len(posts))
 			}
 		}
 	} else if os.Args[1] == "update-last-link" {

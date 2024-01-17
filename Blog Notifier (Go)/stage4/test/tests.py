@@ -92,10 +92,10 @@ class TestBlogNotifierCLI(StageTest):
         output.strip()
 
         # Expected links from the example output
-        expected_output = "\n"
+        expected_output = ""
 
         # Check if all expected links are present in the output
-        if expected_output == output:
+        if expected_output != output:
             return CheckResult.wrong(
                 f"The output of the program does not match the expected output for the list-posts sub-command."
                 f"\nYour program output: {output}"
