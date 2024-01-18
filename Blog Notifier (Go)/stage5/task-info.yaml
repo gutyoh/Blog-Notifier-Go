@@ -12,3 +12,5 @@ files:
     visible: true
   - name: go.sum
     visible: true
+  - name: test/blognotifier_test_utils.py
+    visible: true
