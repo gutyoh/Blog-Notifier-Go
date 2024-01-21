@@ -5,6 +5,15 @@ from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 
 
 class TestBlogNotifierCLI(StageTest):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        for arg in args:
+            print(arg)
+        for k, v in kwargs.items():
+            print(f"{k}: {v}")
+        self.mail_queue = args[0] #kwargs['mail_queue']
+        self.stop_server_signal_queue = args[1] #kwargs['stop_server_signal_queue']
+
 
     @dynamic_test
     def test1_migrate_command(self):
@@ -82,9 +91,9 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # checking if the mails were actually sent
-        expected_msgs = [f'new blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}']
+        expected_msgs = [f'New blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}']
         for i in range(len(expected_msgs)):
-            msg = mail_queue.get()
+            msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
@@ -98,7 +107,7 @@ class TestBlogNotifierCLI(StageTest):
             if expected_msgs[0] not in msg.get('message', ""):
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {expected_msgs[0]}")
+                    f"implemented. expected message: {expected_msgs[0]}, output message: {msg.get('message', "")}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -142,9 +151,9 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[NESTED_LINKS_TEST_2][-1]}' for blog-post in blog_files[NESTED_LINKS_TEST_2][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_LINKS_TEST_2][-1]}' for blog_post in blog_files[NESTED_LINKS_TEST_2][:-1]]
         for i in range(len(expected_msgs)):
-            msg = mail_queue.get()
+            msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
@@ -212,9 +221,9 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[NESTED_LINKS_TEST_3][-1]}' for blog-post in blog_files[NESTED_LINKS_TEST_3][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_LINKS_TEST_3][-1]}' for blog_post in blog_files[NESTED_LINKS_TEST_3][:-1]]
         for i in range(len(expected_msgs)):
-            msg = mail_queue.get()
+            msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
@@ -282,9 +291,9 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[FLAT_MULTIPLE_LINKS_TEST][-1]}' for blog-post in blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[FLAT_MULTIPLE_LINKS_TEST][-1]}' for blog_post in blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]]
         for i in range(len(expected_msgs)):
-            msg = mail_queue.get()
+            msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
@@ -352,9 +361,9 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[NESTED_AND_FLAT_LINKS_TEST][-1]}' for blog-post in blog_files[NESTED_AND_FLAT_LINKS_TEST][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_AND_FLAT_LINKS_TEST][-1]}' for blog_post in blog_files[NESTED_AND_FLAT_LINKS_TEST][:-1]]
         for i in range(len(expected_msgs)):
-            msg = mail_queue.get()
+            msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
@@ -414,6 +423,7 @@ if __name__ == '__main__':
         create_blog_site_with_no_posts()
         create_blog_site_with_nested_posts(1, NESTED_LINKS_TEST_1)
         create_blog_site_with_nested_posts(2, NESTED_LINKS_TEST_2)
+        create_blog_site_with_nested_posts(3, NESTED_LINKS_TEST_3)
         create_flat_blog_site_with_multiple_posts()
         create_blog_site_with_nested_and_flat_posts()
 
@@ -426,13 +436,15 @@ if __name__ == '__main__':
                                                       args=(mail_queue, stop_server_signal_queue))
         smtp_server_process.start()
         # getting aiosmtpd server's address
-        # controller_info['hostname'] = mail_queue.get()
-        # controller_info['port'] = mail_queue.get()
-        config_map['server']['host'] = mail_queue.get()
-        config_map['server']['port'] = mail_queue.get()
+        controller_info = {}
+        controller_info['hostname'] = mail_queue.get()
+        controller_info['port'] = mail_queue.get()
+        print(f'successfully received config of smtp server {controller_info}')
+        # config_map['server']['host'] = mail_queue.get()
+        # config_map['server']['port'] = mail_queue.get()
 
         # running tests
-        TestBlogNotifierCLI().run_tests()
+        TestBlogNotifierCLI(mail_queue, stop_server_signal_queue).run_tests()
     finally:
         # stopping python's http.server
         http_server_process.kill()

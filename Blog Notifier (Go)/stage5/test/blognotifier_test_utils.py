@@ -89,6 +89,8 @@ post_template = """<div class="post">
 
 html_files = []  # stores the names os all the html files created for test cases. used for cleaning purposes at the end
 blog_files = {}  # stores the html file names used in test cases
+
+
 # controller_info = {}  # used for storing the default smtp server address
 
 
@@ -144,8 +146,8 @@ def generate_random_text(k: int) -> str:
 config_map = {
     'mode': 'mail',
     'server': {
-        'host': 'this field will be populated at run time',
-        'port': 'this field will be populated at run time'
+        'host': '127.0.0.1',
+        'port': 8025
     },
     'client': {
         'email': 'this field will be populated at run time',
@@ -278,10 +280,13 @@ def create_blog_site_with_nested_and_flat_posts():
 
 def run_http_server(port):
     # Create an HTTP server with the specified port and handler
-    handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", port), handler) as httpd:
-        print(f"Serving on port {port}")
-        httpd.serve_forever()
+    try:
+        handler = http.server.SimpleHTTPRequestHandler
+        with socketserver.TCPServer(("", port), handler) as httpd:
+            print(f"Serving on port {port}")
+            httpd.serve_forever()
+    finally:
+        print('from run_http_server func: http server stopped')
 
 
 def create_yaml_file(file_name, content):
@@ -292,6 +297,10 @@ def create_yaml_file(file_name, content):
 def remove_yaml_file(file_name):
     if os.path.exists(file_name):
         os.remove(file_name)
+
+
+# mail_queue: Queue  # = Queue()  # aiosmtpd server will put mails it receives from the program in this queue
+# stop_server_signal_queue: Queue  # = Queue()  # is used to send signal when to stop aiosmtpd server
 
 
 class MyHandler:
@@ -309,13 +318,13 @@ class MyHandler:
         return '250 Message accepted for delivery'
 
 
-def start_smtp_server(queue: Queue, stop_server_signal_queue: Queue):
-    handler = MyHandler(queue)
-    controller = Controller(handler)
+def start_smtp_server(mail_queue: Queue, stop_server_signal_queue: Queue):
+    handler = MyHandler(mail_queue)
+    controller = Controller(handler, hostname='127.0.0.1', port=8025)
     controller.start()
     print('smtp server started')
-    queue.put(controller.hostname)
-    queue.put(controller.port)
+    mail_queue.put(controller.hostname)
+    mail_queue.put(controller.port)
     # blocks until stop signal is received, this is necessary to ensure the server is not closed prematurely
     stop_server_signal_queue.get()
     controller.stop()

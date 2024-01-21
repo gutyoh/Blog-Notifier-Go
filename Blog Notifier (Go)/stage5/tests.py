@@ -1,5 +1,5 @@
-import multiprocessing
-from multiprocessing import Queue
+import time,  multiprocessing
+
 from test.blognotifier_test_utils import *
 from test.tests import TestBlogNotifierCLI
 
@@ -14,6 +14,7 @@ if __name__ == '__main__':
         create_blog_site_with_no_posts()
         create_blog_site_with_nested_posts(1, NESTED_LINKS_TEST_1)
         create_blog_site_with_nested_posts(2, NESTED_LINKS_TEST_2)
+        create_blog_site_with_nested_posts(3, NESTED_LINKS_TEST_3)
         create_flat_blog_site_with_multiple_posts()
         create_blog_site_with_nested_and_flat_posts()
 
@@ -25,23 +26,32 @@ if __name__ == '__main__':
         smtp_server_process = multiprocessing.Process(target=start_smtp_server, args=(mail_queue, stop_server_signal_queue))
         smtp_server_process.start()
         # getting aiosmtpd server's address
-        # controller_info['hostname'] = mail_queue.get()
-        # controller_info['port'] = mail_queue.get()
-        config_map['server']['host'] = mail_queue.get()
-        config_map['server']['port'] = mail_queue.get()
+        controller_info = {}
+        controller_info['hostname'] = mail_queue.get()
+        controller_info['port'] = mail_queue.get()
+        print(f'successfully received config of smtp server {controller_info}')
+        # config_map['server']['host'] = mail_queue.get()
+        # config_map['server']['port'] = mail_queue.get()
 
         # running tests
-        TestBlogNotifierCLI('blog_notifier.blog_notifier').run_tests()
+        TestBlogNotifierCLI(mail_queue, stop_server_signal_queue).run_tests()
     finally:
+        # time.sleep(60)
+        print('stopping the http server')
         # stopping python's http.server
         http_server_process.kill()
+        print('successfully stopped http server')
 
         # removing all the html files created
+        print('removing the html files generated for testcases')
         remove_fake_blog()
+        print('successfully removed the html files generated for test cases')
 
         # stopping SMTP server
+        print('stopping the smtp server')
         stop_server_signal_queue.put(None)
         mail_queue.close()
         stop_server_signal_queue.close()
         smtp_server_process.kill()
+        print('successfully stopped smtp server')
 

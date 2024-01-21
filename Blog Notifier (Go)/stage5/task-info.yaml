@@ -14,3 +14,11 @@ files:
     visible: true
   - name: test/blognotifier_test_utils.py
     visible: true
+  - name: credentials.yaml
+    visible: true
+  - name: stage5.exe
+    visible: true
+  - name: blogs.sqlite3
+    visible: true
+  - name: blognotifier.exe~
+    visible: true

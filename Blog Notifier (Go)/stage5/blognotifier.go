@@ -210,8 +210,10 @@ func addNewPostIfNotExist(site, link string) (bool, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Println("yes indeed new post, attempting to add new post")
 			_, err = db.Exec(ADD_NEW_POST, site, link)
 			if err == nil {
+				fmt.Println("Successfully added new post")
 				return true, err
 			}
 		}
@@ -433,22 +435,28 @@ func findAllLinks(site string) ([]string, error) {
 // fetches mails that need to be sent, sends the mails, updates the database if the mail is sent successfully
 func notify() error {
 	// fetching all the new messages or messages that are not sent
+	fmt.Println("fetching emails that are not sent already")
 	mails, err := fetchMails()
 	if err != nil {
 		return err
 	}
-	deliveredCh := make(chan int)
-	errCh := make(chan error)
+	fmt.Printf("Number of not sent emails: %d", len(mails))
+	deliveredCh := make(chan int, len(mails))
+	errCh := make(chan error, len(mails))
+	doneCh := make(chan bool, 0)
+	//toClose := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 	// send email notification to the user
 	for _, mail := range mails {
 		wg.Add(1)
 		go func(_mail mailStruct) {
 			defer wg.Done()
+			fmt.Printf("sending an email mailArrd: %s,  sender: %s, recipient: %s, msg: %s\n", mailAddr, sender, recipient, _mail.msg)
 			err := smtp.SendMail(mailAddr, nil, sender, []string{recipient}, []byte(_mail.msg))
 			if err == nil {
 				deliveredCh <- _mail.id
 			} else {
+				fmt.Printf("error sending email %s\n", err.Error())
 				errCh <- err
 			}
 		}(mail)
@@ -458,17 +466,34 @@ func notify() error {
 		wg.Wait()
 		close(deliveredCh)
 		close(errCh)
+		fmt.Println("all goroutine email senders finished")
+		//doneCh <- true
+		//<-toClose
+		close(doneCh)
+		fmt.Println("notify: successfully closed all channels ")
 	}()
 
-	for id := range deliveredCh {
-		err = updateMail(id)
+	for {
+		select {
+		case id, is_open := <-deliveredCh:
+			if !is_open {
+				deliveredCh = nil
+			}
+			err = updateMail(id)
+		case err, is_open := <-errCh:
+			if !is_open {
+				errCh = nil
+			}
+			fmt.Println("error delivering mail")
+			fmt.Println(err)
+		case <-doneCh:
+			//if deliveredCh == nil && errCh == nil {
+			//	close(toClose)
+			//	return nil
+			//}
+			return nil
+		}
 	}
-	for err := range errCh {
-		fmt.Println("error delivering mail")
-		fmt.Println(err)
-	}
-
-	return nil
 }
 
 // recursive crawl function
@@ -502,7 +527,7 @@ func crawl() (map[string][]string, error) {
 	postsCh := make(chan []blogPostsLink, len(blogs))
 	errCh := make(chan error, len(blogs))
 	doneCh := make(chan bool, 0)
-	toCloseCh := make(chan bool, 0)
+	//toCloseCh := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 
 	for _, blog := range blogs {
@@ -516,8 +541,11 @@ func crawl() (map[string][]string, error) {
 			} else {
 				postsCh <- links
 			}
-			if n := len(links) - 1; n > 0 {
+			if n := len(links) - 1; n >= 0 {
+				fmt.Printf("all links discovered %v\n", links)
+				fmt.Println("starting to update last_link")
 				err = updateLastSiteVisited(site, links[n].link)
+				fmt.Println("successfully updated last_link")
 				if err != nil {
 					errCh <- err
 				}
@@ -529,9 +557,11 @@ func crawl() (map[string][]string, error) {
 		wg.Wait()
 		close(postsCh)
 		close(errCh)
-		doneCh <- true
-		<-toCloseCh
+		fmt.Println("all goroutine crawlers finished")
+		//doneCh <- true
+		//<-toCloseCh
 		close(doneCh)
+		fmt.Println("crawl: successfully closed all channels ")
 	}()
 
 	siteLinksMap := make(map[string][]string)
@@ -563,10 +593,11 @@ func crawl() (map[string][]string, error) {
 			}
 
 		case <-doneCh:
-			if postsCh == nil && errCh == nil {
-				close(toCloseCh)
-				return siteLinksMap, nil
-			}
+			//if postsCh == nil && errCh == nil {
+			//	close(toCloseCh)
+			//	return siteLinksMap, nil
+			//}
+			return siteLinksMap, nil
 		}
 	}
 }
@@ -577,10 +608,12 @@ func syncBlogs(configFile string) error {
 		return err
 	}
 	// crawl
+	fmt.Println("Starting to crawl")
 	site_links_map, err := crawl()
 	if err != nil {
 		return err
 	}
+	fmt.Println("Successfully finished crawling")
 	// update the database for the new posts
 	for blog, posts := range site_links_map {
 		for _, post := range posts {
