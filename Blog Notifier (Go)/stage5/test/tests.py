@@ -6,7 +6,6 @@ from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 
 class TestBlogNotifierCLI(StageTest):
 
-
     @dynamic_test
     def test1_migrate_command(self):
         # Test the --migrate sub-command which creates the blogs.sqlite3 database and tables
@@ -83,19 +82,23 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # checking if the mails were actually sent
-        expected_number_of_mails = 1
-        expected_msg = f'new blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}'
-        for i in range(expected_number_of_mails):
+        expected_msgs = [f'new blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}']
+        for i in range(len(expected_msgs)):
             msg = mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly implemented. expected sender_email: {config_map['client']['email']}, got sender_email: {msg.get('from', "")}")
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
+                    f"{msg.get('from', "")}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: {msg.get('to', "")}")
-            if expected_msg not in msg.get('message', ""):
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
+                    f"{msg.get('to', "")}")
+            if expected_msgs[0] not in msg.get('message', ""):
                 return CheckResult.wrong(
-                f"Test was carried out for the sync sub-command, seems that sending emails is not correctly implemented. expected message: {expected_msg}")
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected message: {expected_msgs[0]}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -134,23 +137,24 @@ class TestBlogNotifierCLI(StageTest):
         yaml_content = yaml.dump(config_map)
         create_yaml_file('credentials.yaml', yaml_content)
 
-        # testing syn command
+        # testing sync command
         program = TestedProgram()
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_number_of_mails = 2
-        expected_msgs = [f'new blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}',
-                        f'new blog-post {blog_files[NESTED_LINKS_TEST_1][1]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}']
-
-        for i in range(expected_number_of_mails):
+        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[NESTED_LINKS_TEST_2][-1]}' for blog-post in blog_files[NESTED_LINKS_TEST_2][:-1]]
+        for i in range(len(expected_msgs)):
             msg = mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly implemented. expected sender_email: {config_map['client']['email']}, got sender_email: {msg.get('from', "")}")
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
+                    f"{msg.get('from', "")}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: {msg.get('to', "")}")
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
+                    f"{msg.get('to', "")}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -160,7 +164,8 @@ class TestBlogNotifierCLI(StageTest):
                     break
             if not found:
                 CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly implemented. expected message: {e_msg}")
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected message: {e_msg}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -182,45 +187,76 @@ class TestBlogNotifierCLI(StageTest):
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
         return CheckResult.wrong(
-            f"Test was carried out for blog site with two nested blog posts seems like the last_link column in the blogs "
+            f"Test was carried out for blog site with two nested blog posts seems like the last_link column in the "
+            f"blogs"
             f"table is not updated after crawling")
 
     @dynamic_test
     def test5_crawling_with_nested_links_c(self):
         # Test the crawl flag and list-posts sub-command for blog with 3 nested blog-posts.
-
+        # prepping for the test
         remove_db_file()
         program = TestedProgram()
         program.start("--migrate")
         program = TestedProgram()
         blog = blog_files[NESTED_LINKS_TEST_3][-1]
         program.start('--explore', blog)
+        config_map['client']['email'] = f'{generate_random_text(6)}.{random.choice(["com", "net"])}'
+        config_map['client']['password'] = generate_random_text(10)
+        config_map['client']['send_to'] = f'{generate_random_text(6)}.{random.choice(["com", "net"])}'
+        yaml_content = yaml.dump(config_map)
+        create_yaml_file('credentials.yaml', yaml_content)
+
+        # testing sync command
         program = TestedProgram()
         program.start("sync", "--conf", "credentials.yaml")
 
+        # testing if the mails were actually sent
+        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[NESTED_LINKS_TEST_3][-1]}' for blog-post in blog_files[NESTED_LINKS_TEST_3][:-1]]
+        for i in range(len(expected_msgs)):
+            msg = mail_queue.get()
+            if msg.get('from', "") != config_map['client']['email']:
+                return CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
+                    f"{msg.get('from', "")}")
+            if msg.get('to', "") != config_map['client']['send_to']:
+                return CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
+                    f"{msg.get('to', "")}")
+            found = False
+            e_msg = ""
+            for expected_msg in expected_msgs:
+                e_msg = expected_msg
+                if expected_msg in msg.get('message', ""):
+                    found = True
+                    break
+            if not found:
+                CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected message: {e_msg}")
+
+        # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
         output = program.start("list-posts", "--site", blog)
-
         output.strip()
-
         # Expected links from the example output
         expected_output = blog_files[NESTED_LINKS_TEST_3][:-1]
-
         # Check if all expected links are present in the output
         for link in expected_output:
             if link not in output:
-                return CheckResult.wrong(f"Test was carried out for blog site with three nested blog posts {link} not found in "
-                                         f"the program output")
+                return CheckResult.wrong(
+                    f"Test was carried out for blog site with three nested blog posts {link} not found in "
+                    f"the program output")
 
+        # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
         output = program.start("--list")
-
         output.strip()
-
         for link in expected_output:
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
-
         return CheckResult.wrong(
             f"Test was carried out for blog site with three nested blog posts, seems like the last_link column in the "
             f"blogs table is not updated after crawling")
@@ -228,23 +264,55 @@ class TestBlogNotifierCLI(StageTest):
     @dynamic_test
     def test6_crawling_with_flat_multiple_pages(self):
         # Test the crawl flag and list-posts sub-command for blog with many blog-posts.
+        # prepping for the test
         remove_db_file()
         program = TestedProgram()
         program.start("--migrate")
         program = TestedProgram()
         blog = blog_files[FLAT_MULTIPLE_LINKS_TEST][-1]
         program.start('--explore', blog)
+        config_map['client']['email'] = f'{generate_random_text(6)}.{random.choice(["com", "net"])}'
+        config_map['client']['password'] = generate_random_text(10)
+        config_map['client']['send_to'] = f'{generate_random_text(6)}.{random.choice(["com", "net"])}'
+        yaml_content = yaml.dump(config_map)
+        create_yaml_file('credentials.yaml', yaml_content)
+
+        # testing sync command
         program = TestedProgram()
         program.start("sync", "--conf", "credentials.yaml")
 
+        # testing if the mails were actually sent
+        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[FLAT_MULTIPLE_LINKS_TEST][-1]}' for blog-post in blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]]
+        for i in range(len(expected_msgs)):
+            msg = mail_queue.get()
+            if msg.get('from', "") != config_map['client']['email']:
+                return CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
+                    f"{msg.get('from', "")}")
+            if msg.get('to', "") != config_map['client']['send_to']:
+                return CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
+                    f"{msg.get('to', "")}")
+            found = False
+            e_msg = ""
+            for expected_msg in expected_msgs:
+                e_msg = expected_msg
+                if expected_msg in msg.get('message', ""):
+                    found = True
+                    break
+            if not found:
+                CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected message: {e_msg}")
+
+        # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
         output = program.start("list-posts", "--site", blog)
-
         output.strip()
-
         # Expected links from the example output
         expected_output = blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]
-
         # Check if all expected links are present in the output
         for link in expected_output:
             if link not in output:
@@ -252,15 +320,13 @@ class TestBlogNotifierCLI(StageTest):
                     f"Test was carried out for blog site with multiple blog posts {link} not found in "
                     f"the program output")
 
+        # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
         output = program.start("--list")
-
         output.strip()
-
         for link in expected_output:
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
-
         return CheckResult.wrong(
             f"Test was carried out for blog site with multiple blog posts seems like the last_link column in the blogs "
             f"table is not updated after crawling")
@@ -268,21 +334,54 @@ class TestBlogNotifierCLI(StageTest):
     @dynamic_test
     def test7_crawling_with_nested_and_flat_posts(self):
         # Test the crawl flag and list-posts sub-command for blog with many blog-posts (flat and nested).
+        # prepping for the test
         remove_db_file()
         program = TestedProgram()
         program.start("--migrate")
         program = TestedProgram()
         blog = blog_files[NESTED_AND_FLAT_LINKS_TEST][-1]
         program.start('--explore', blog)
+        config_map['client']['email'] = f'{generate_random_text(6)}.{random.choice(["com", "net"])}'
+        config_map['client']['password'] = generate_random_text(10)
+        config_map['client']['send_to'] = f'{generate_random_text(6)}.{random.choice(["com", "net"])}'
+        yaml_content = yaml.dump(config_map)
+        create_yaml_file('credentials.yaml', yaml_content)
+
+        # testing sync command
         program = TestedProgram()
         program.start("sync", "--conf", "credentials.yaml")
 
+        # testing if the mails were actually sent
+        expected_msgs = [f'new blog-post {blog-post} on blog {blog_files[NESTED_AND_FLAT_LINKS_TEST][-1]}' for blog-post in blog_files[NESTED_AND_FLAT_LINKS_TEST][:-1]]
+        for i in range(len(expected_msgs)):
+            msg = mail_queue.get()
+            if msg.get('from', "") != config_map['client']['email']:
+                return CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
+                    f"{msg.get('from', "")}")
+            if msg.get('to', "") != config_map['client']['send_to']:
+                return CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
+                    f"{msg.get('to', "")}")
+            found = False
+            e_msg = ""
+            for expected_msg in expected_msgs:
+                e_msg = expected_msg
+                if expected_msg in msg.get('message', ""):
+                    found = True
+                    break
+            if not found:
+                CheckResult.wrong(
+                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
+                    f"implemented. expected message: {e_msg}")
+
+        # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
         output = program.start("list-posts", "--site", blog)
-
         # Expected links from the example output
         expected_links = blog_files[NESTED_AND_FLAT_LINKS_TEST][:-1]
-
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in output:
@@ -290,12 +389,10 @@ class TestBlogNotifierCLI(StageTest):
                     f"Test was carried out for blog site with multiple blog posts flat and nested. {link} not found in "
                     f"the program output")
 
-
+        # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
         output = program.start("--list")
-
         output.strip()
-
         for link in expected_links:
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
@@ -304,65 +401,6 @@ class TestBlogNotifierCLI(StageTest):
             f"Test was carried out for blog site with multiple flat and nested blog posts seems like the last_link "
             f"column in the blogs table is not updated after crawling")
 
-    @dynamic_test
-    def test2_valid_credentials_yaml(self):
-        # Create the second YAML file
-        yaml_content_2 = ("mode: telegram\n"
-                          "server:\n"
-                          "  host: 127.0.0.1\n"
-                          "  port: 2500\n"
-                          "client:\n"
-                          "  email: sender@example.com\n"
-                          "  password: secret\n"
-                          "  send_to: recipient@example.net\n"
-                          "telegram:\n"
-                          "  bot_token: abcd1234\n"
-                          "  channel: mychannel")
-        create_yaml_file('credentials.yaml', yaml_content_2)
-
-        program = TestedProgram()
-        output = program.start('--config', 'credentials.yaml').strip()
-
-        # Remove the created YAML file
-        remove_yaml_file('credentials.yaml')
-
-        expected_output = ("mode: telegram\n"
-                           "email_server: 127.0.0.1:2500\n"
-                           "client: sender@example.com secret recipient@example.net\n"
-                           "telegram: abcd1234@mychannel")
-
-        if output != expected_output:
-            return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the second YAML file."
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_output}")
-
-        return CheckResult.correct()
-
-    @dynamic_test
-    def test3_invalid_yaml_file(self):
-        program = TestedProgram()
-        output = program.start('--config', 'nonexistent.yaml').lower().strip()
-        expected_error = "file 'nonexistent.yaml' not found"
-        if 'not found' not in output or not program.is_finished():
-            return CheckResult.wrong(
-                f"The program should print a message mentioning YAML file was not found. "
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_error}")
-        return CheckResult.correct()
-
-    @dynamic_test
-    def test4_no_command_input(self):
-        program = TestedProgram()
-        output = program.start().lower().strip()
-        expected_error = "no command input specified"
-
-        if ('no command' not in output and 'specified' not in output) and not program.is_finished():
-            return CheckResult.wrong(
-                f"The program should print a message mentioning no command input was specified. "
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_error}")
-        return CheckResult.correct()
 
 
 # Run the test cases
@@ -392,7 +430,6 @@ if __name__ == '__main__':
         # controller_info['port'] = mail_queue.get()
         config_map['server']['host'] = mail_queue.get()
         config_map['server']['port'] = mail_queue.get()
-
 
         # running tests
         TestBlogNotifierCLI().run_tests()
