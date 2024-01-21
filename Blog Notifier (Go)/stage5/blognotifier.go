@@ -20,7 +20,7 @@ const (
 	MAX_DEPTH          = 3
 	CONFIG_FILE        = "./credentials.yml"
 	BLOGS_DB           = "./blogs.sqlite3"
-	MAIL_MESSAGE       = `New blog post %s on blog %s`
+	MAIL_MESSAGE       = `New blog-post %s on blog %s`
 	CREATE_BLOGS_TABLE = `CREATE TABLE IF NOT EXISTS blogs (
 		site                    TEXT PRIMARY KEY,
 		last_link               TEXT

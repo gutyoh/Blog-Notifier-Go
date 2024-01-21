@@ -25,8 +25,10 @@ if __name__ == '__main__':
         smtp_server_process = multiprocessing.Process(target=start_smtp_server, args=(mail_queue, stop_server_signal_queue))
         smtp_server_process.start()
         # getting aiosmtpd server's address
-        controller_info['hostname'] = mail_queue.get()
-        controller_info['port'] = mail_queue.get()
+        # controller_info['hostname'] = mail_queue.get()
+        # controller_info['port'] = mail_queue.get()
+        config_map['server']['host'] = mail_queue.get()
+        config_map['server']['port'] = mail_queue.get()
 
         # running tests
         TestBlogNotifierCLI('blog_notifier.blog_notifier').run_tests()

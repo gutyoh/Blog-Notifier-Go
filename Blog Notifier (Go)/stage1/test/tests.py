@@ -112,17 +112,6 @@ class TestBlogNotifierCLI(StageTest):
 
         yaml_content = yaml.dump(config_map)
 
-        # yaml_content_2 = ("mode: telegram\n"
-        #                   "server:\n"
-        #                   "  host: 127.0.0.1\n"
-        #                   "  port: 2500\n"
-        #                   "client:\n"
-        #                   "  email: sender@example.com\n"
-        #                   "  password: secret\n"
-        #                   "  send_to: recipient@example.net\n"
-        #                   "telegram:\n"
-        #                   "  bot_token: abcd1234\n"
-        #                   "  channel: mychannel")
         self.create_yaml_file('credentials.yaml', yaml_content)
 
         program = TestedProgram()

@@ -9,6 +9,7 @@ NO_LINKS_TEST = 'no_links'
 FLAT_MULTIPLE_LINKS_TEST = 'flat_multiple_links'
 NESTED_LINKS_TEST_1 = 'nested_links_1'
 NESTED_LINKS_TEST_2 = 'nested_links_2'
+NESTED_LINKS_TEST_3 = 'nested_links_3'
 NESTED_AND_FLAT_LINKS_TEST = 'nested_and_flat_links'
 
 FAKE_BLOG = "fake-blog"
@@ -88,7 +89,7 @@ post_template = """<div class="post">
 
 html_files = []  # stores the names os all the html files created for test cases. used for cleaning purposes at the end
 blog_files = {}  # stores the html file names used in test cases
-controller_info = {}  # used for storing the default smtp server address
+# controller_info = {}  # used for storing the default smtp server address
 
 
 def check_table_exists(table_name: str) -> bool:
@@ -118,7 +119,6 @@ def check_table_properties(table_name) -> tuple:
 
 
 def remove_db_file():
-    print(os.curdir)
     if os.path.exists(DB_FILE):
         os.remove(DB_FILE)
 
@@ -139,6 +139,24 @@ def create_html_file(file_name, content):
 
 def generate_random_text(k: int) -> str:
     return "".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=k))
+
+
+config_map = {
+    'mode': 'mail',
+    'server': {
+        'host': 'this field will be populated at run time',
+        'port': 'this field will be populated at run time'
+    },
+    'client': {
+        'email': 'this field will be populated at run time',
+        'password': 'this field will be populated at run time',
+        'send_to': 'this field will be populated at run time'
+    },
+    'telegram': {
+        'bot_token': generate_random_text(k=7),
+        'channel': generate_random_text(k=6)
+    }
+}
 
 
 # only one html file containing no links will be created
