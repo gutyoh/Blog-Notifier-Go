@@ -4,16 +4,14 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
+	_ "github.com/mattn/go-sqlite3"
+	"gopkg.in/yaml.v3"
 	"log"
 	"net/http"
 	"net/smtp"
 	"os"
 	"sync"
-
-	"gopkg.in/yaml.v3"
-
-	"github.com/PuerkitoBio/goquery"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -504,6 +502,7 @@ func crawl() (map[string][]string, error) {
 	postsCh := make(chan []blogPostsLink, len(blogs))
 	errCh := make(chan error, len(blogs))
 	doneCh := make(chan bool, 0)
+	toCloseCh := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 
 	for _, blog := range blogs {
@@ -530,6 +529,8 @@ func crawl() (map[string][]string, error) {
 		wg.Wait()
 		close(postsCh)
 		close(errCh)
+		doneCh <- true
+		<-toCloseCh
 		close(doneCh)
 	}()
 
@@ -562,7 +563,10 @@ func crawl() (map[string][]string, error) {
 			}
 
 		case <-doneCh:
-			return siteLinksMap, nil
+			if postsCh == nil && errCh == nil {
+				close(toCloseCh)
+				return siteLinksMap, nil
+			}
 		}
 	}
 }
