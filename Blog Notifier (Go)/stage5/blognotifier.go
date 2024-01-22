@@ -444,7 +444,7 @@ func notify() error {
 	deliveredCh := make(chan int, len(mails))
 	errCh := make(chan error, len(mails))
 	doneCh := make(chan bool, 0)
-	//toClose := make(chan bool, 0)
+	toClose := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 	// send email notification to the user
 	for _, mail := range mails {
@@ -467,10 +467,18 @@ func notify() error {
 		close(deliveredCh)
 		close(errCh)
 		fmt.Println("all goroutine email senders finished")
-		//doneCh <- true
-		//<-toClose
-		close(doneCh)
-		fmt.Println("notify: successfully closed all channels ")
+		for {
+			select {
+			case _, ok := <-toClose:
+				if !ok {
+					close(doneCh)
+					fmt.Println("notify: successfully closed all channels ")
+					return
+				}
+			default:
+				doneCh <- true
+			}
+		}
 	}()
 
 	for {
@@ -487,11 +495,11 @@ func notify() error {
 			fmt.Println("error delivering mail")
 			fmt.Println(err)
 		case <-doneCh:
-			//if deliveredCh == nil && errCh == nil {
-			//	close(toClose)
-			//	return nil
-			//}
-			return nil
+			if deliveredCh == nil && errCh == nil {
+				close(toClose)
+				return nil
+			}
+			//return nil
 		}
 	}
 }
@@ -527,7 +535,7 @@ func crawl() (map[string][]string, error) {
 	postsCh := make(chan []blogPostsLink, len(blogs))
 	errCh := make(chan error, len(blogs))
 	doneCh := make(chan bool, 0)
-	//toCloseCh := make(chan bool, 0)
+	toCloseCh := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 
 	for _, blog := range blogs {
@@ -558,10 +566,18 @@ func crawl() (map[string][]string, error) {
 		close(postsCh)
 		close(errCh)
 		fmt.Println("all goroutine crawlers finished")
-		//doneCh <- true
-		//<-toCloseCh
-		close(doneCh)
-		fmt.Println("crawl: successfully closed all channels ")
+		for {
+			select {
+			case _, ok := <-toCloseCh:
+				if !ok {
+					close(doneCh)
+					fmt.Println("crawl: successfully closed all channels ")
+					return
+				}
+			default:
+				doneCh <- true
+			}
+		}
 	}()
 
 	siteLinksMap := make(map[string][]string)
@@ -593,11 +609,11 @@ func crawl() (map[string][]string, error) {
 			}
 
 		case <-doneCh:
-			//if postsCh == nil && errCh == nil {
-			//	close(toCloseCh)
-			//	return siteLinksMap, nil
-			//}
-			return siteLinksMap, nil
+			if postsCh == nil && errCh == nil {
+				close(toCloseCh)
+				return siteLinksMap, nil
+			}
+			//return siteLinksMap, nil
 		}
 	}
 }
