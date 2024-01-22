@@ -11,9 +11,8 @@ class TestBlogNotifierCLI(StageTest):
             print(arg)
         for k, v in kwargs.items():
             print(f"{k}: {v}")
-        self.mail_queue = args[0] #kwargs['mail_queue']
-        self.stop_server_signal_queue = args[1] #kwargs['stop_server_signal_queue']
-
+        self.mail_queue = args[0]  # kwargs['mail_queue']
+        self.stop_server_signal_queue = args[1]  # kwargs['stop_server_signal_queue']
 
     @dynamic_test
     def test1_migrate_command(self):
@@ -91,23 +90,24 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # checking if the mails were actually sent
-        expected_msgs = [f'New blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}']
+        expected_msgs = [
+            f'New blog-post {blog_files[NESTED_LINKS_TEST_1][0]} on blog {blog_files[NESTED_LINKS_TEST_1][-1]}']
         for i in range(len(expected_msgs)):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', "")}")
+                    f"{msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', "")}")
+                    f"{msg.get('to', '')}")
             if expected_msgs[0] not in msg.get('message', ""):
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {expected_msgs[0]}, output message: {msg.get('message', "")}")
+                    f"implemented. expected message: {expected_msgs[0]}, output message: {msg.get('message', '')}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -151,19 +151,20 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_LINKS_TEST_2][-1]}' for blog_post in blog_files[NESTED_LINKS_TEST_2][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_LINKS_TEST_2][-1]}' for blog_post in
+                         blog_files[NESTED_LINKS_TEST_2][:-1]]
         for i in range(len(expected_msgs)):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', "")}")
+                    f"{msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', "")}")
+                    f"{msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -221,19 +222,20 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_LINKS_TEST_3][-1]}' for blog_post in blog_files[NESTED_LINKS_TEST_3][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_LINKS_TEST_3][-1]}' for blog_post in
+                         blog_files[NESTED_LINKS_TEST_3][:-1]]
         for i in range(len(expected_msgs)):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', "")}")
+                    f"{msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', "")}")
+                    f"{msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -291,19 +293,20 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[FLAT_MULTIPLE_LINKS_TEST][-1]}' for blog_post in blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[FLAT_MULTIPLE_LINKS_TEST][-1]}' for blog_post
+                         in blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]]
         for i in range(len(expected_msgs)):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', "")}")
+                    f"{msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', "")}")
+                    f"{msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -361,19 +364,20 @@ class TestBlogNotifierCLI(StageTest):
         program.start("sync", "--conf", "credentials.yaml")
 
         # testing if the mails were actually sent
-        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_AND_FLAT_LINKS_TEST][-1]}' for blog_post in blog_files[NESTED_AND_FLAT_LINKS_TEST][:-1]]
+        expected_msgs = [f'New blog-post {blog_post} on blog {blog_files[NESTED_AND_FLAT_LINKS_TEST][-1]}' for blog_post
+                         in blog_files[NESTED_AND_FLAT_LINKS_TEST][:-1]]
         for i in range(len(expected_msgs)):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', "")}")
+                    f"{msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
                     f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
                     f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', "")}")
+                    f"{msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -409,7 +413,6 @@ class TestBlogNotifierCLI(StageTest):
         return CheckResult.wrong(
             f"Test was carried out for blog site with multiple flat and nested blog posts seems like the last_link "
             f"column in the blogs table is not updated after crawling")
-
 
 
 # Run the test cases
