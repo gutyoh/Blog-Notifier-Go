@@ -92,17 +92,17 @@ class TestBlogNotifierCLI(StageTest):
         _mode = {'mode': random.choice(['mail', 'telegram'])}
 
         _server = {'server': {
-            'host': f'https://{''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.com',
+            'host': f'https://{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.com',
             'port': random.randint(2500, 8080)}
         }
 
-        _client = {'client':{
-            'email':f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}',
-            'password':f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
-            'send_to':f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}'
+        _client = {'client': {
+            'email': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}',
+            'password': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
+            'send_to': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}'
         }}
 
-        _telegram = {'telegram':{
+        _telegram = {'telegram': {
             'bot_token': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
             'channel': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=6))}'
         }}
