@@ -101,10 +101,10 @@ func parseConfig(configFile string) error {
 
 	mailAddr = fmt.Sprintf("%s:%d", conf.Server.Host, conf.Server.Port)
 	sender, password, recipient = conf.Client.Email, conf.Client.Password, conf.Client.SendTo
-	fmt.Printf("mode: %s\n", conf.Mode)
-	fmt.Printf("email_server: %s\n", mailAddr)
-	fmt.Printf("client: %s %s %s\n", sender, password, recipient)
-	fmt.Printf("telegram: %s@%s\n", conf.Telegram.BotToken, conf.Telegram.Channel)
+	//fmt.Printf("mode: %s\n", conf.Mode)
+	//fmt.Printf("email_server: %s\n", mailAddr)
+	//fmt.Printf("client: %s %s %s\n", sender, password, recipient)
+	//fmt.Printf("telegram: %s@%s\n", conf.Telegram.BotToken, conf.Telegram.Channel)
 	return nil
 }
 
@@ -118,7 +118,6 @@ func getDBConnection() (*sql.DB, error) {
 	}
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-		fmt.Println("Error enabling foreign key constraints:", err)
 		return nil, err
 	}
 	return db, nil
@@ -210,10 +209,8 @@ func addNewPostIfNotExist(site, link string) (bool, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println("yes indeed new post, attempting to add new post")
 			_, err = db.Exec(ADD_NEW_POST, site, link)
 			if err == nil {
-				fmt.Println("Successfully added new post")
 				return true, err
 			}
 		}
@@ -394,7 +391,6 @@ func updateMail(id int) error {
 	defer db.Close()
 	_, err = db.Exec(UPDATE_MAIL, id)
 	if err != nil {
-		fmt.Printf("error updating is_sent id %d in the mails table\n", id)
 		return err
 	}
 	return nil
@@ -435,12 +431,10 @@ func findAllLinks(site string) ([]string, error) {
 // fetches mails that need to be sent, sends the mails, updates the database if the mail is sent successfully
 func notify() error {
 	// fetching all the new messages or messages that are not sent
-	fmt.Println("fetching emails that are not sent already")
 	mails, err := fetchMails()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Number of not sent emails: %d", len(mails))
 	deliveredCh := make(chan int, len(mails))
 	errCh := make(chan error, len(mails))
 	doneCh := make(chan bool, 0)
@@ -451,12 +445,10 @@ func notify() error {
 		wg.Add(1)
 		go func(_mail mailStruct) {
 			defer wg.Done()
-			fmt.Printf("sending an email mailArrd: %s,  sender: %s, recipient: %s, msg: %s\n", mailAddr, sender, recipient, _mail.msg)
 			err := smtp.SendMail(mailAddr, nil, sender, []string{recipient}, []byte(_mail.msg))
 			if err == nil {
 				deliveredCh <- _mail.id
 			} else {
-				fmt.Printf("error sending email %s\n", err.Error())
 				errCh <- err
 			}
 		}(mail)
@@ -466,13 +458,11 @@ func notify() error {
 		wg.Wait()
 		close(deliveredCh)
 		close(errCh)
-		fmt.Println("all goroutine email senders finished")
 		for {
 			select {
 			case _, ok := <-toClose:
 				if !ok {
 					close(doneCh)
-					fmt.Println("notify: successfully closed all channels ")
 					return
 				}
 			default:
@@ -488,18 +478,15 @@ func notify() error {
 				deliveredCh = nil
 			}
 			err = updateMail(id)
-		case err, is_open := <-errCh:
+		case _, is_open := <-errCh:
 			if !is_open {
 				errCh = nil
 			}
-			fmt.Println("error delivering mail")
-			fmt.Println(err)
 		case <-doneCh:
 			if deliveredCh == nil && errCh == nil {
 				close(toClose)
 				return nil
 			}
-			//return nil
 		}
 	}
 }
@@ -550,10 +537,7 @@ func crawl() (map[string][]string, error) {
 				postsCh <- links
 			}
 			if n := len(links) - 1; n >= 0 {
-				fmt.Printf("all links discovered %v\n", links)
-				fmt.Println("starting to update last_link")
 				err = updateLastSiteVisited(site, links[n].link)
-				fmt.Println("successfully updated last_link")
 				if err != nil {
 					errCh <- err
 				}
@@ -565,13 +549,11 @@ func crawl() (map[string][]string, error) {
 		wg.Wait()
 		close(postsCh)
 		close(errCh)
-		fmt.Println("all goroutine crawlers finished")
 		for {
 			select {
 			case _, ok := <-toCloseCh:
 				if !ok {
 					close(doneCh)
-					fmt.Println("crawl: successfully closed all channels ")
 					return
 				}
 			default:
@@ -601,11 +583,9 @@ func crawl() (map[string][]string, error) {
 				}
 			}
 
-		case err, is_open := <-errCh:
-			if !is_open {
+		case _, isOpen := <-errCh:
+			if !isOpen {
 				errCh = nil
-			} else {
-				fmt.Println(err)
 			}
 
 		case <-doneCh:
@@ -613,7 +593,6 @@ func crawl() (map[string][]string, error) {
 				close(toCloseCh)
 				return siteLinksMap, nil
 			}
-			//return siteLinksMap, nil
 		}
 	}
 }
@@ -624,12 +603,10 @@ func syncBlogs(configFile string) error {
 		return err
 	}
 	// crawl
-	fmt.Println("Starting to crawl")
 	site_links_map, err := crawl()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Successfully finished crawling")
 	// update the database for the new posts
 	for blog, posts := range site_links_map {
 		for _, post := range posts {

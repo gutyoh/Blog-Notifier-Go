@@ -60,7 +60,6 @@ func getDBConnection() (*sql.DB, error) {
 	}
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-		fmt.Println("Error enabling foreign key constraints:", err)
 		return nil, err
 	}
 	return db, nil
@@ -333,6 +332,7 @@ func crawl() (map[string][]string, error) {
 	postsCh := make(chan blogPostsLinks, len(blogs))
 	errCh := make(chan error, len(blogs))
 	doneCh := make(chan bool, 0)
+	toClose := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 
 	for _, blog := range blogs {
@@ -364,7 +364,17 @@ func crawl() (map[string][]string, error) {
 		wg.Wait()
 		close(postsCh)
 		close(errCh)
-		close(doneCh)
+		for {
+			select {
+			case _, ok := <-toClose:
+				if !ok {
+					close(doneCh)
+					return
+				}
+			default:
+				doneCh <- true
+			}
+		}
 	}()
 
 	siteLinksMap := make(map[string][]string)
@@ -385,7 +395,10 @@ func crawl() (map[string][]string, error) {
 				fmt.Println(err)
 			}
 		case <-doneCh:
-			return siteLinksMap, nil
+			if postsCh == nil && errCh == nil {
+				close(toClose)
+				return siteLinksMap, nil
+			}
 		}
 	}
 }

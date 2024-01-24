@@ -20,5 +20,3 @@ files:
     visible: true
   - name: blogs.sqlite3
     visible: true
-  - name: blognotifier.exe~
-    visible: true
