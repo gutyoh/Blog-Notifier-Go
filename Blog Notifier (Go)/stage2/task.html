@@ -1,64 +1,158 @@
 <h2>Description</h2>
 
-<p>There are lots of good blogs that we would like to follow. But how do we keep track of our favorite blogs. In this stage we will create a watch list for our favorite blogs and store that list into a database.  In the second stage, you will develop the functionality to create and migrate a database schema and implement methods for CRUD operations to manage table records. The database must have the following schema:</p>
+<p>There are lots of great blogs that we would like to follow, but how do we keep track of our favorite blogs? In this stage, you will enhance the Blog Notifier CLI to create a watch list for our favorite blogs and store that list in a <strong>SQLite</strong> database; you will also develop the functionality to create and migrate a database schema and implement methods for CRUD operations to manage table records.</p>
 
-<h4>Database schema</h4>
-
-<p>The database must have the tables titled <code>blogs</code>, <code>posts</code> and <code>mails</code> .</p>
-
-<p>The <code>blogs</code> table must have the columns:</p>
+<p>[ALERT-primary]While working with <code>SQLite</code> in Go, you have a choice of using several libraries:</p>
 
 <ul>
-  <li>site            VARCHAR(256) PRIMARY KEY</li>
-  <li>last_link    VARCHAR(256)</li>
+  <li><a href="https://gorm.io/docs/" rel="noopener noreferrer nofollow">GORM</a></li>
+  <li><a href="https://jmoiron.github.io/sqlx/" rel="noopener noreferrer nofollow">sqlx</a></li>
+  <li><a href="http://go-database-sql.org/" rel="noopener noreferrer nofollow">database/sql</a></li>
 </ul>
 
-<p>The <code>posts</code> table must have the columns:</p>
-
-<ul>
-  <li>site    VARCHAR(256)</li>
-  <li>link    VARCHAR(256)</li>
-</ul>
-
-<p><code>site</code> in the <code>posts</code> table  references <code>site</code> in the <code>blogs</code> table, and should implement ON DELETE CASCADE (when a blog site is deleted from the <code>blogs</code> table all the corresponding posts in the <code>posts</code> table must be <strong>deleted</strong> as well)</p>
-
-<p>The <code>mails</code> table must have the columns:</p>
-
-<ul>
-  <li>id             INTEGER PRIMARY KEY AUTOINCREMENT</li>
-  <li>mail        TEXT</li>
-  <li>is_sent    INTEGER DEFAULT 0</li>
-</ul>
+<p>Due to its broad functionality, we recommend using <strong>GORM</strong> to solve this project. However, the library choice is up to you, and the specific syntax and calls will depend on the library you choose. Please remember that syntax and calls can differ between libraries.[/ALERT]</p>
 
 <h2>Objectives</h2>
 
-<p>In this stage, you will</p>
+<p>In this stage, your task is implementing functionalities within the Blog Notifier CLI to interact with a SQLite database. The database, named <code>blogs.sqlite3</code>, will be automatically created and structured by your program using specific sub-commands.</p>
+
+<p>The database must contain the <code>blogs</code>, <code>posts</code>, and <code>mails</code> tables with the following schema:</p>
+
+<p>The <code>blogs</code> table must have the following columns:</p>
+
+<table>
+  <thead>
+  <tr>
+    <th>Column</th>
+    <th>Type</th>
+    <th>Constraints</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>site</code></td>
+    <td><code>TEXT</code></td>
+    <td>PRIMARY KEY</td>
+  </tr>
+  <tr>
+    <td><code>last_link</code></td>
+    <td><code>TEXT</code></td>
+    <td> </td>
+  </tr>
+  </tbody>
+</table>
+
+<p>The <code>posts</code> table must have the following columns:</p>
+
+<table>
+  <thead>
+  <tr>
+    <th>Column</th>
+    <th>Type</th>
+    <th>Constraints</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>link</code></td>
+    <td><code>TEXT</code></td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td><code>site</code></td>
+    <td><code>TEXT</code></td>
+    <td>FOREIGN KEY (references <code>blogs.site</code>), ON DELETE CASCADE</td>
+  </tr>
+  </tbody>
+</table>
+
+<p>⚠️ Note that the <code>site</code> column in the <code>posts</code> table references <code>site</code> in the <code>blogs</code> table, and must have the constraint ON DELETE CASCADE to ensure that deleting a blog site from the <code>blogs</code> table also deletes corresponding posts in the <code>posts</code> table.</p>
+
+<p>And the <code>mails</code> table must have the following columns:</p>
+
+<table>
+  <thead>
+  <tr>
+    <th>Column</th>
+    <th>Type</th>
+    <th>Constraints</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>id</code></td>
+    <td><code>INTEGER</code></td>
+    <td>PRIMARY KEY AUTOINCREMENT</td>
+  </tr>
+  <tr>
+    <td><code>mail</code></td>
+    <td><code>TEXT</code></td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td><code>is_sent</code></td>
+    <td><code>INTEGER</code></td>
+    <td>DEFAULT 0</td>
+  </tr>
+  </tbody>
+</table>
+
+<p>Apart from creating the database, you'll implement the following commands in your program:</p>
+
+<p>Implement the <code>--migrate</code> flag; this command creates the <code>blogs.sqlite3</code> database along with the tables; it's the first command you should run to set up the environment for the Blog Notifier.</p>
+
+<p>Implement the <code>--explore</code> flag; it takes the blog's web address as an argument and inserts a new entry into the <code>blogs</code> table. It's kind of similar to adding a blog site to a watch list.</p>
+
+<p>Implement the <code>--list</code> flag; this command lists all entries of blog sites stored in the <code>blogs</code> table. It's similar to displaying all the current blog sites on the watch list.</p>
+
+<p>Implement the <code>update-last-link</code> sub-command; which uses two flags:</p>
 
 <ul>
-  <li>Implement <code>--migrate</code> sub-command for this CLI. This sub-command should create database tables with the following schema.</li>
-  <li>Implement <code>--explore</code> sub-command for this CLI. This sub-command takes web address of the blog and inserts a new entry into the <code>blogs</code> table of the database. kind of like adding a blog site to a watch list.</li>
-  <li>Implement <code>--list</code> sub-command for this CLI. This sub-command lists all the blog sites that are in the <code>blogs</code> table. Kind of like listing all the blog sites that are currently in the watch list.</li>
-  <li>Implement <code>updateLastLink</code> sub-command for this CLI. This sub-command takes web address of the blog let's call it <code>blogAddr</code> and also the web address of the blog post let's call it <code>postAddr</code> and then updates the <code>last_link</code> column with value equal to the <code>postAddr</code> in the <code>blogs</code> table where <code>site</code> equals <code>blogAddr</code> with the</li>
-  <li>Implement <code>--remove</code> sub-command for this CLI. This sub-command takes web address of the blog and deletes that entry from the blogs table, if it exists. kind of like removing a blog site from the watch list.</li>
+  <li><code>site</code>: Specifies the web address of the blog.</li>
+  <li><code>post</code>: Specifies the web address of the blog's latest post.</li>
 </ul>
+
+<p>When you run <code>blognotifier update-last-link --site "blogSite" --post "newPost"</code>, your program should update the <code>last_link</code> column in the <code>blogs</code> table with the value <code>newPost</code> where <code>site</code> equals <code>blogSite</code>; this ensures the watch list always has the latest link to blog posts.</p>
+
+<p>Implement <code>--remove</code> flag; it takes the blog's web address as an argument and deletes that entry from the <code>blogs</code> table if it exists. It's similar to removing a blog site from the watch list.</p>
+
+<p>To better understand how to use the above commands and the expected output for each one, please look at the Examples section below.</p>
 
 <h2>Examples</h2>
 
-<p>In this stage your program will be tested for the sub-command, <code>--migrate</code> <code>--explore</code>, <code>--list</code>, <code>--lastLink</code>, <code>--remove</code>, as follows:</p>
+<p>In this stage, your program will be tested for the flags, <code>--migrate</code> <code>--explore</code>, <code>--list</code>, <code>--update-last-link</code>, <code>--remove</code>, as follows:</p>
 
-<h4>Testing for the sub-command <code>--migrate</code></h4>
+<p><strong>Example 1: Using the <code>--migrate</code> flag</strong></p>
 
-<p>Your program must must create a database with file named <code>blogs.sqlite</code> with the schema described above, when the <code>--migrate</code> sub-command is run</p>
+<p>After running this command, the program should create a database named <code>blogs.sqlite3</code> with the schema for <code>blogs</code>, <code>posts</code>, and <code>mails</code> tables as described in the Objectives section:</p>
 
-<pre><code class="language-bash">blognotifier --migrate</code></pre>
+<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT:</span></em></p>
 
-<h4>Testing for the sub-command <code>--explore</code></h4>
+<pre><code class="language-bash">blognotifier --migrate
+Database 'blogs.sqlite3' created successfully
+Tables 'blogs', 'posts', and 'mails' initialized</code></pre>
 
-<p>When the <code>blognotifier --explore "https://hyperskill.org/blog/"</code> sub-command is run, your program must add an entry with <code>site</code> and <code>last_link</code> equal to <code>"https://hyperskill.org/blog/"</code>, into the <code>blogs</code> table of the database.</p>
+<p><em><span style="color: #ff4363;">Your program must create a sqlite database with file name: <code>blogs.sqlite3</code> </span></em></p>
 
-<h4>Testing for the sub-command <code>--list</code></h4>
+<p><strong>Example 2: Using the <code>--explore</code> flag</strong></p>
 
-<p>When the <code>blognotifier --list</code> sub-command is run, your program must output all the entries that are currently in the blogs table of the database in the following format: <code>&lt;site&gt; &lt;last_link&gt;</code>, replace <code>&lt;site&gt;</code>, and <code>&lt;last_link&gt;</code> with the <code>site</code> and the <code>last_link</code> columns for each entry in the blogs database. For example, let's say we have the following entries currently in the blogs table of the database:</p>
+<p>This command adds an entry to the <code>blogs</code> table with both <code>site</code> and <code>last_link</code> set to "<a href="https://hyperskill.org/blog/" rel="noopener noreferrer nofollow" target="_new">https://hyperskill.org/blog/</a>".</p>
+
+<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG DOES NOT ALREADY EXIST IN THE DATABASE: </span></em></p>
+
+<pre><code class="language-bash">blognotifier --explore "https://hyperskill.org/blog/"
+New blog added to watchlist:
+Site: https://hyperskill.org/blog/
+Last link: https://hyperskill.org/blog/</code></pre>
+
+<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG ALREADY EXIST IN THE DATABASE: </span></em></p>
+
+<pre><code class="language-bash">blognotifier --explore "https://hyperskill.org/blog/"
+https://hyperskill.org/blog/ already exists in the watch list</code></pre>
+
+<p><strong>Example 3: Using the <code>--list</code> flag</strong></p>
+
+<p>When running this command, the program should display all entries from the <code>blogs</code> table in the format: <code>&lt;site&gt; &lt;last_link&gt;</code>. For example, assuming the <code>blogs</code> table has the following entries:</p>
 
 <table border="1" cellpadding="1" cellspacing="1" style="width: 500px;">
   <thead>
@@ -79,15 +173,31 @@
   </tbody>
 </table>
 
-<p> your program must output the following to the <code>stdout</code>:</p>
+<p>The output should be:</p>
 
-<pre><code>https://blog1.com https://blog1.com/post100
+<pre><code class="language-bash">​blognotifier --list
+https://blog1.com https://blog1.com/post100
 https://blog2.com https://blog2.com/post1</code></pre>
 
-<h4> Testing for the sub-command <code>updateLastLink</code></h4>
+<p><strong>Example 4: Using the </strong><code>--update-last-link</code><strong> flag</strong></p>
 
-<p>When the <code>blognotifier updateLastLink --site "blogSite" --post "newPost"</code> sub-command is run, your program must update the <code>blogs</code> table in the database, by updating the <code>last_link</code> column with the value <code>newPost</code> where <code>site</code> equals <code>blogSite</code>.</p>
+<p>This command updates the <code>last_link</code> column in the <code>blogs</code> table to <code>newPost</code> for the entry where <code>site</code> is <code>blogSite</code>.</p>
 
-<h4> Testing for the sub-command <code>--remove</code></h4>
+<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT:</span></em></p>
 
-<p>When the <code>blognotifier --remove "blogSite"</code> sub-command is run, your program must remove the entry in the <code>blogs</code> table in the database where <code>site</code> equals <code>blogSite</code>.</p>
+<pre><code class="language-bash">blognotifier updateLastLink --site "blogSite" --post "newPost"
+The last link for 'blogSite' updated to 'newPost'</code></pre>
+
+<p><strong>Example 5: Using the <code>--remove</code> flag</strong></p>
+
+<p>After running this command, the program must remove the entry from the <code>blogs</code> table where <code>site</code> equals <code>blogSite</code>.</p>
+
+<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG EXISTS IN THE DATABASE:</span></em></p>
+
+<pre><code class="language-bash">blognotifier --remove "blogSite"
+'blogSite' removed from the watch list.</code></pre>
+
+<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG DOES NOT EXIST IN THE DATABASE:</span></em></p>
+
+<pre><code class="language-bash">blognotifier --remove "blogSite"
+'blogSite' does not exists the watch list.</code></pre>

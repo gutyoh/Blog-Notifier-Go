@@ -6,7 +6,7 @@
 
 <h2>Objectives</h2>
 
-<p>Your task is to implement the <code>--config</code> sub-command for the Blog Notifier CLI; this command should accept a filename as input, and the program needs to parse the provided YAML file to extract and display its contents.</p>
+<p>Your task is to implement the <code>--config</code> flag for the Blog Notifier CLI; this command should accept a filename as input, and the program needs to parse the provided YAML file to extract and display its contents.</p>
 
 <p>In Go, you can read and parse YAML files using the <code>os</code> and <code>yaml</code> packages; the process typically involves reading the file&#39;s contents and then unmarshalling (or decoding) these contents into a <code>struct</code>. Here&#39;s a simplified example to illustrate this process.</p>
 
@@ -34,17 +34,17 @@ if err != nil {
 <p>After correctly parsing the YAML file, the output of your program should consist of the following lines:</p>
 
 <ol>
-	<li>The first line should print the message&nbsp;<code>mode: &lt;mode&gt;</code>. Replace <code>&lt;mode&gt;</code> with the <code>mode</code> setting value&nbsp;from the YAML file.</li>
-	<li>On the second line, display the message&nbsp;<code>email_server: &lt;host&gt;:&lt;port&gt;</code>, where <code>&lt;host&gt;</code> and <code>&lt;port&gt;</code> are the respective values found under the <code>server</code> section in the YAML file.</li>
-	<li>The third line should display the message&nbsp;<code>&lt;email&gt; &lt;password&gt; &lt;recipient&gt;</code>, substituting <code>&lt;email&gt;</code>, <code>&lt;password&gt;</code>, and <code>&lt;recipient&gt;</code> with the corresponding values under the <code>client</code> section in the YAML file.</li>
-	<li>Finally, the fourth line should display the message&nbsp;<code>&lt;bot_token&gt;@&lt;channel&gt;</code>, replace&nbsp;<code>&lt;bot_token&gt;</code> and <code>&lt;channel&gt;</code>&nbsp;with the respective values under the <code>telegram</code> section in the YAML file.</li>
+    <li>The first line should print the message&nbsp;<code>mode: &lt;mode&gt;</code>. Replace <code>&lt;mode&gt;</code> with the <code>mode</code> setting value&nbsp;from the YAML file.</li>
+    <li>On the second line, display the message&nbsp;<code>email_server: &lt;host&gt;:&lt;port&gt;</code>, where <code>&lt;host&gt;</code> and <code>&lt;port&gt;</code> are the respective values found under the <code>server</code> section in the YAML file.</li>
+    <li>The third line should display the message&nbsp;<code>&lt;email&gt; &lt;password&gt; &lt;recipient&gt;</code>, substituting <code>&lt;email&gt;</code>, <code>&lt;password&gt;</code>, and <code>&lt;recipient&gt;</code> with the corresponding values under the <code>client</code> section in the YAML file.</li>
+    <li>Finally, the fourth line should display the message&nbsp;<code>&lt;bot_token&gt;@&lt;channel&gt;</code>, replace&nbsp;<code>&lt;bot_token&gt;</code> and <code>&lt;channel&gt;</code>&nbsp;with the respective values under the <code>telegram</code> section in the YAML file.</li>
 </ol>
 
 <p>Additionally, you must ensure that the Blog Notifier CLI is robust, handling the following error scenarios gracefully:</p>
 
 <ul>
-	<li>If the specified YAML file does NOT exist, the program should output an error message: <code>file &#39;nonexistent.yaml&#39; not found</code>.</li>
-	<li>If the <code>--config</code> command is missing or not specified, the program should output: <code>no command input specified</code>.</li>
+    <li>If the specified YAML file does NOT exist, the program should output an error message: <code>file &#39;nonexistent.yaml&#39; not found</code>.</li>
+    <li>If the <code>--config</code> command is missing or not specified, the program should output: <code>no command input specified</code>.</li>
 </ul>
 
 <p>For a better understanding of the format and structure of the expected output, please reference the YAML files and commands provided in the Examples section below.</p>
