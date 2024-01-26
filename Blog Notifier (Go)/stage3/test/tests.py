@@ -21,7 +21,7 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in links:
-                return CheckResult.wrong(f"The link {link} was not found in the output.")
+                return CheckResult.wrong("Not all the links in the blog-site are discovered")
 
         # # Check if there are no extra links in the output
         for link in links:
@@ -46,7 +46,7 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         if expected_output not in output:
             return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the second YAML file."
+                f"The output of the program does not match the expected output."
                 f"\nYour program output: {output}"
                 f"\nExpected output: {expected_output}")
 
@@ -105,17 +105,12 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in links:
-                return CheckResult.wrong(f"The link {link} was not found in the output.")
+                return CheckResult.wrong("Program did not discover all the expected links.")
 
         links = [link for link in links if link.endswith(".html")]
         if len(links) > len(expected_links):
             return CheckResult.wrong(f"The output contains more links than expected, seams like the program crawls "
                                      f"beyond the depth limit of '3'")
-
-        # Check if there are no links beyond depth 3
-        # for link in links:
-        #     if link.count('/') > 4:
-        #         return CheckResult.wrong(f"A link {link} was found that exceeds the depth limit of 3.")
 
         return CheckResult.correct()
 
@@ -134,17 +129,12 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in links:
-                return CheckResult.wrong(f"The link {link} was not found in the output.")
+                return CheckResult.wrong("Program did not discover all the expected links.")
 
         links = [link for link in links if link.endswith(".html")]
         if len(links) > len(expected_links):
             return CheckResult.wrong(f"The output contains more links than expected, seams like the program crawls "
                                      f"beyond the depth limit of '3'")
-
-        # Check if there are no links beyond depth 3
-        # for link in links:
-        #     if link.count('/') > 4:
-        #         return CheckResult.wrong(f"A link {link} was found that exceeds the depth limit of 3.")
 
         return CheckResult.correct()
 
@@ -163,23 +153,18 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in links:
-                return CheckResult.wrong(f"The link {link} was not found in the output.")
+                return CheckResult.wrong("Program did not discover all the expected links.")
 
         links = [link for link in links if link.endswith(".html")]
         if len(links) > len(expected_links):
             return CheckResult.wrong(f"The output contains more links than expected, seams like the program crawls "
                                      f"beyond the depth limit of '3'")
 
-        # Check if there are no links beyond depth 3
-        # for link in links:
-        #     if link.count('/') > 4:
-        #         return CheckResult.wrong(f"A link {link} was found that exceeds the depth limit of 3.")
-
         return CheckResult.correct()
 
     @dynamic_test
     def test7_crawling_with_duplicate_links_b(self):
-        # Test checks for cross refrencing posts (posts that have refrences of each other). Checks whether the code
+        # Test checks for cross-referencing posts (posts that have references of each other). Checks whether the code
         # breaks out of infinite recursion by obeying a depth limit of '3'.
         program = TestedProgram()
         output = program.start("--crawl-site", blog_files[CYCLIC_LINKS_TEST][-1])
@@ -195,7 +180,7 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in links:
-                return CheckResult.wrong(f"The link {link} was not found in the output.")
+                return CheckResult.wrong("Program did not discover all the expected links.")
 
 
         if len(links) > len(expected_links):
@@ -210,26 +195,27 @@ class TestBlogNotifierCLI(StageTest):
 
     @dynamic_test
     def test8_crawling_with_nested_and_flat_posts(self):
-        # Test checks for blogs that have flat blog-posts(blog-post that has no hyperlinks) or nested blog-posts(blog-post that have hyperlinks to other blog-posts) .
+        # Test checks for blogs that have flat blog-posts(blog-post that has no hyperlinks) or nested blog-posts(
+        # blog-post that have hyperlinks to other blog-posts) .
         program = TestedProgram()
         output = program.start("--crawl-site", blog_files[NESTED_AND_FLAT_LINKS_TEST][-1])
 
         # Splitting the output into lines for easier assertion
-        # links = output.strip().split('\n')
+
         links = output.strip()
 
         # Expected links from the example output
         expected_links = blog_files[NESTED_AND_FLAT_LINKS_TEST][-2::-1]
 
-        # links = [link for link in links if link.endswith(".html")]
-
         # Check if all expected links are present in the output
         for link in expected_links:
             if link not in links:
-                return CheckResult.wrong(f"The link {link} was not found in the output.")
+                return CheckResult.wrong("Program did not discover all the expected links.")
 
+        links = output.strip().split('\n')
+        links = [link for link in links if link.endswith(".html")]
         # Check if there are no extra links in the output
-        for link in links.split('\n'):
+        for link in links:
             if link not in expected_links:
                 return CheckResult.wrong(f"There is an extra link {link} in the output.")
 
@@ -270,4 +256,4 @@ if __name__ == '__main__':
         # stopping python's http.server
         http_server_process.kill()
         # removing all the html files created
-        # remove_html_files()
+        remove_fake_blog()

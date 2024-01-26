@@ -23,5 +23,4 @@ if __name__ == '__main__':
         # stopping python's http.server
         http_server_process.kill()
         # removing all the html files created
-        # remove_html_files()
         remove_fake_blog()

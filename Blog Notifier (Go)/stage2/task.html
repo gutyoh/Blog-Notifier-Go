@@ -126,7 +126,7 @@
 
 <p>After running this command, the program should create a database named <code>blogs.sqlite3</code> with the schema for <code>blogs</code>, <code>posts</code>, and <code>mails</code> tables as described in the Objectives section:</p>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT:</span></em></p>
+<p><em>Below is the expected output of the</em> <code>--migrate</code> <em>command:</em></p>
 
 <pre><code class="language-bash">blognotifier --migrate
 Database 'blogs.sqlite3' created successfully
@@ -138,14 +138,14 @@ Tables 'blogs', 'posts', and 'mails' initialized</code></pre>
 
 <p>This command adds an entry to the <code>blogs</code> table with both <code>site</code> and <code>last_link</code> set to "<a href="https://hyperskill.org/blog/" rel="noopener noreferrer nofollow" target="_new">https://hyperskill.org/blog/</a>".</p>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG DOES NOT ALREADY EXIST IN THE DATABASE: </span></em></p>
+<p><em>Below is the expected output of the</em> <code>--explore</code> <em>command if the blog does not already exist in the database:</em> <em><span style="color: #ff4363;">: </span></em></p>
 
 <pre><code class="language-bash">blognotifier --explore "https://hyperskill.org/blog/"
 New blog added to watchlist:
 Site: https://hyperskill.org/blog/
 Last link: https://hyperskill.org/blog/</code></pre>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG ALREADY EXIST IN THE DATABASE: </span></em></p>
+<p><em>Below is the expected output of the</em> <code>--explore</code> <em>command if the blog already exist in the database:</em></p>
 
 <pre><code class="language-bash">blognotifier --explore "https://hyperskill.org/blog/"
 https://hyperskill.org/blog/ already exists in the watch list</code></pre>
@@ -183,7 +183,7 @@ https://blog2.com https://blog2.com/post1</code></pre>
 
 <p>This command updates the <code>last_link</code> column in the <code>blogs</code> table to <code>newPost</code> for the entry where <code>site</code> is <code>blogSite</code>.</p>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT:</span></em></p>
+<p><em>Below is the expected output of the</em> <code>--update-last-link</code> <em>command:</em></p>
 
 <pre><code class="language-bash">blognotifier updateLastLink --site "blogSite" --post "newPost"
 The last link for 'blogSite' updated to 'newPost'</code></pre>
@@ -192,12 +192,12 @@ The last link for 'blogSite' updated to 'newPost'</code></pre>
 
 <p>After running this command, the program must remove the entry from the <code>blogs</code> table where <code>site</code> equals <code>blogSite</code>.</p>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG EXISTS IN THE DATABASE:</span></em></p>
+<p><em>Below is the expected output of the</em> <code>--remove</code> <em>command if the blog already exist in the database:</em></p>
 
 <pre><code class="language-bash">blognotifier --remove "blogSite"
 'blogSite' removed from the watch list.</code></pre>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT IF THE BLOG DOES NOT EXIST IN THE DATABASE:</span></em></p>
+<p><em>Below is the expected output of the</em> <code>--remove</code> <em>command if the blog does not exist in the database:</em></p>
 
 <pre><code class="language-bash">blognotifier --remove "blogSite"
 'blogSite' does not exists the watch list.</code></pre>

@@ -19,7 +19,9 @@ class TestBlogNotifierCLI(StageTest):
             temp = check_table_properties(table_name)
             if temp[0] is False:
                 raise CheckResult.wrong(
-                    f"Wrong column types for '{table_name}' table. Expected column types for the '{table_name}' table are {tables_properties[table_name]}. Found {temp[1]}")
+                    f"Wrong column types for '{table_name}' table."
+                    f"\nExpected column types for the '{table_name}' table are {tables_properties[table_name]}."
+                    f"\nFound: {temp[1]}")
 
         return CheckResult.correct()
 
@@ -42,8 +44,8 @@ class TestBlogNotifierCLI(StageTest):
         output = program.start("--list").strip()
 
         if f"{blog_1} {blog_1}" not in output or f"{blog_2} {blog_2}" not in output or f'{blog_3} {blog_3}' not in output:
-            raise CheckResult.wrong("The --list command did not list all the blog sites in the watch list correctly. "
-                                    "May be explore functionality is not implemented correctly")
+            raise CheckResult.wrong(f"The --list command did not list all the blog sites in the watch list correctly."
+                                    f"May be '--explore' functionality is not implemented correctly")
 
         return CheckResult.correct()
 
@@ -97,7 +99,7 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         if expected_output != output:
             return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the list-posts sub-command."
+                f"Wrong output for the test case: blog-site that has no blog-posts(no hyperlinks)"
                 f"\nYour program output: {output}"
                 f"\nExpected output: {expected_output}")
 
@@ -126,7 +128,8 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         if expected_output not in output:
             return CheckResult.wrong(
-                f"Test was carried out for blog site with just one blog post expected_output: {expected_output} program_output: {output}")
+                f"Test was carried out for blog site with just one blog post" 
+                f"\nExpected_output: {expected_output} \nYour program output: {output}")
 
         return CheckResult.correct()
 
@@ -153,8 +156,11 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_output:
             if link not in output:
-                return CheckResult.wrong(f"Test was carried out for blog site with two blog posts {link} not found in "
-                                         f"the program output")
+                return CheckResult.wrong(f"Test was carried out for site with nested links of depth 2"
+                                         f"for example: a.html has link for b.html and b.html has link for c.html."
+                                         f"your program must discover b.html and c.html"
+                                         f"\nYour program output: {output}"
+                                         f"\nExpected output: {expected_output}")
 
         return CheckResult.correct()
 
@@ -182,8 +188,10 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_output:
             if link not in output:
                 return CheckResult.wrong(
-                    f"Test was carried out for blog site with multiple blog posts {link} not found in "
-                    f"the program output")
+                    f"Test was carried out for blog site with multiple blog posts."
+                    f"Your program did not discover all the links"
+                    f"\nYour program output: {output}"
+                    f"\nExpected output: {expected_output}")
 
         return CheckResult.correct()
 
@@ -209,8 +217,10 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_links:
             if link not in output:
                 return CheckResult.wrong(
-                    f"Test was carried out for blog site with multiple blog posts flat and nested. {link} not found in "
-                    f"the program output")
+                    f"Test was carried out for blog site with multiple blog posts that may be flat or nested."
+                    f"Your program did not discover all the links"
+                    f"\nYour program output: {output}"
+                    f"\nExpected links: {expected_links}")
 
         return CheckResult.correct()
 
@@ -238,8 +248,8 @@ def test9_crawling_and_update_last_link(self):
             return CheckResult.correct()
 
     return CheckResult.wrong(
-        f"Test was carried out for blog site with multiple blog posts seems like the last_link column in the blogs "
-        f"table is not updated after crawling")
+        f"Test was carried out for blog site with multiple blog posts,"
+        f"The last_link column in the 'blogs' table is not updated.")
 
 
 # Run the tests

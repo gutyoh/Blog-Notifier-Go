@@ -5,6 +5,9 @@ import yaml
 from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 
 
+def get_random_text(k:int):
+    return ''.join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=k))
+
 class TestBlogNotifierCLI(StageTest):
 
     @staticmethod
@@ -92,19 +95,19 @@ class TestBlogNotifierCLI(StageTest):
         _mode = {'mode': random.choice(['mail', 'telegram'])}
 
         _server = {'server': {
-            'host': f'https://{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.com',
+            'host': f'https://{get_random_text(7)}.com',
             'port': random.randint(2500, 8080)}
         }
 
         _client = {'client': {
-            'email': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}',
-            'password': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
-            'send_to': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=7))}.{"".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))}.{random.choice(["net", "com"])}'
+            'email': f'{get_random_text(7)}.{get_random_text(4)}.{random.choice(["net", "com"])}',
+            'password': f'{get_random_text(7)}',
+            'send_to': f'{get_random_text(7)}.{get_random_text(4)}.{random.choice(["net", "com"])}'
         }}
 
         _telegram = {'telegram': {
-            'bot_token': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=7))}',
-            'channel': f'{"".join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=6))}'
+            'bot_token': get_random_text(7),
+            'channel': get_random_text(6)
         }}
 
         config_map = {}

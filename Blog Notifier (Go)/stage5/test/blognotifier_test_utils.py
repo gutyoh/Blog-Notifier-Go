@@ -91,9 +91,6 @@ html_files = []  # stores the names os all the html files created for test cases
 blog_files = {}  # stores the html file names used in test cases
 
 
-# controller_info = {}  # used for storing the default smtp server address
-
-
 def check_table_exists(table_name: str) -> bool:
     connection = sqlite3.connect(DB_FILE)  # Replace 'your_database.db' with your database file
     # Create a cursor object
@@ -117,7 +114,7 @@ def check_table_properties(table_name) -> tuple:
     columns_info = {column[1]: column[2] for column in columns_info}
     cursor.close()
     connection.close()
-    return (tables_properties[table_name] == columns_info, columns_info)
+    return tables_properties[table_name] == columns_info, columns_info
 
 
 def remove_db_file():
@@ -299,10 +296,6 @@ def remove_yaml_file(file_name):
         os.remove(file_name)
 
 
-# mail_queue: Queue  # = Queue()  # aiosmtpd server will put mails it receives from the program in this queue
-# stop_server_signal_queue: Queue  # = Queue()  # is used to send signal when to stop aiosmtpd server
-
-
 class MyHandler:
     def __init__(self, queue: Queue):
         self.queue = queue
@@ -322,7 +315,6 @@ def start_smtp_server(mail_queue: Queue, stop_server_signal_queue: Queue):
     handler = MyHandler(mail_queue)
     controller = Controller(handler, hostname='127.0.0.1', port=8025)
     controller.start()
-    print('smtp server started')
     mail_queue.put(controller.hostname)
     mail_queue.put(controller.port)
     # blocks until stop signal is received, this is necessary to ensure the server is not closed prematurely

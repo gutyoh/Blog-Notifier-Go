@@ -55,7 +55,7 @@ doc.Find("a").Each(func(i int, s *goquery.Selection) {
 
 <p><strong>Example 1: Crawling a blog site with multiple pages.</strong></p>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT:</span></em></p>
+<p><em>Below is the expected output of the</em> <code>--crawl-site</code> <em>command:</em></p>
 
 <pre><code>$ go run main.go --crawl-site "https://brianpzaide.github.io/blog-notifier"
 https://brianpzaide.github.io/blog-notifier/a.html
@@ -68,7 +68,7 @@ https://brianpzaide.github.io/blog-notifier/f.html
 
 <p><strong>Example 2: Crawling a blog site with no hyperlinks.</strong></p>
 
-<p><em><span style="color: #ff4363;">POSSIBLE EXPECTED OUTPUT:</span></em></p>
+<p><em>Below is the expected output of the</em> <code>--crawl-site</code> <em>command for the site that does not have any blog-posts yet:</em></p>
 
 <pre><code>$ go run main.go --crawl-site "http://noblogpostsyet.com"
 No blog posts found for http://noblogpostsyet.com

@@ -7,10 +7,10 @@ from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 class TestBlogNotifierCLI(StageTest):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        for arg in args:
-            print(arg)
-        for k, v in kwargs.items():
-            print(f"{k}: {v}")
+        # for arg in args:
+        #     print(arg)
+        # for k, v in kwargs.items():
+        #     print(f"{k}: {v}")
         self.mail_queue = args[0]  # kwargs['mail_queue']
         self.stop_server_signal_queue = args[1]  # kwargs['stop_server_signal_queue']
 
@@ -27,7 +27,9 @@ class TestBlogNotifierCLI(StageTest):
             temp = check_table_properties(table_name)
             if temp[0] is False:
                 raise CheckResult.wrong(
-                    f"Wrong column types for '{table_name}' table. Expected column types for the '{table_name}' table are {tables_properties[table_name]}. Found {temp[1]}")
+                    f"Wrong column types for '{table_name}' table."
+                    f"\nExpected column types for the '{table_name}' table are {tables_properties[table_name]}."
+                    f"\nFound {temp[1]}")
 
         return CheckResult.correct()
 
@@ -54,7 +56,9 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         if expected_output != output:
             return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the list-posts sub-command."
+                f"Test was carried out for the case when the blog-site has no blog-posts."
+                f"After running the sub-command sync --conf credentials.yaml, list-posts --site {blog} was run"
+                f"The output of the program does not match the expected output"
                 f"\nYour program output: {output}"
                 f"\nExpected output: {expected_output}")
 
@@ -64,8 +68,12 @@ class TestBlogNotifierCLI(StageTest):
         output.strip()
 
         if f'{blog} {blog}' not in output:
-            return CheckResult.wrong("list flag returned wrong output. 'last_link' cloumn in the blogs table must be "
-                                     "only updated when new blog-post for that blog site are found")
+            return CheckResult.wrong(
+                f"Test was carried out for the case when the blog-site has no blog-posts."
+                f"After running the sub-command sync --conf credentials.yaml, --list sub-command was run"
+                f"The output of the program does not match the expected output"
+                f"\nYour program output: {output}"
+                f"\nExpected output: {expected_output}")
 
         return CheckResult.correct()
 
@@ -96,18 +104,22 @@ class TestBlogNotifierCLI(StageTest):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', '')}")
+                    f"Test was carried out for the case when blog-site has just one blog-post for the sync "
+                    f"sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected sender_email: {config_map['client']['email']},"
+                    f"\nGot sender_email: {msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', '')}")
+                    f"Test was carried out for the case when blog-site has just one blog-post for the sync "
+                    f"sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected receiver_email: {config_map['client']['send_to']},"
+                    f"\nGot receiver_email: {msg.get('to', '')}")
             if expected_msgs[0] not in msg.get('message', ""):
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {expected_msgs[0]}, output message: {msg.get('message', '')}")
+                    f"Test was carried out for the case when blog-site has just one blog-post for the sync "
+                    f"sub-command, seems that sending emails is not correctly implemented."
+                    f"\n Expected message: {expected_msgs[0]}."
+                    f"\n Your message: {msg.get('message', '')}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -118,7 +130,10 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         if expected_output not in output:
             return CheckResult.wrong(
-                f"Test was carried out for blog site with just one blog post expected_output: {expected_output} program_output: {output}")
+                f"Test was carried out for the case when blog-site has just one blog-post for the sync "
+                f"sub-command, list-posts --site {blog} returned wrong output."
+                f"\nExpected_output: {expected_output} "
+                f"\nYour program output: {output}")
 
         # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
@@ -126,9 +141,17 @@ class TestBlogNotifierCLI(StageTest):
         output.strip()
         if f'{blog} {expected_output}' in output:
             return CheckResult.correct()
+
+        ex_output = ""
+        for link in expected_output:
+            ex_output += f'{blog} {link}\n'
+
         return CheckResult.wrong(
-            f"Test was carried out for blog site with just one hyperlink, seams like the last_link column in the blogs "
-            f"table is not updated after crawling")
+            f"Test was carried out for the case when blog-site has just one blog-post for the sync "
+            f"sub-command, --list command returned wrong output."
+            f"Seems that last_link column in the 'blogs' table is not updated after crawling"
+            f"\nExpected_output could be any of the following: {ex_output} "
+            f"\nYour program output: {output}")
 
     @dynamic_test
     def test4_crawling_with_nested_links_b(self):
@@ -157,14 +180,18 @@ class TestBlogNotifierCLI(StageTest):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', '')}")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 2 (a.html has link "
+                    f"for b.html and b.html has link for c.html and c.html has no links),"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected sender_email: {config_map['client']['email']},"
+                    f"\nGot sender_email: {msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', '')}")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 2 (a.html has link "
+                    f"for b.html and b.html has link for c.html and c.html has no links),"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected receiver_email: {config_map['client']['send_to']}"
+                    f"\nGot receiver_email: {msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -174,8 +201,11 @@ class TestBlogNotifierCLI(StageTest):
                     break
             if not found:
                 CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {e_msg}")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 2 (a.html has link "
+                    f"for b.html and b.html has link for c.html and c.html has no links),"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected message: {e_msg}"
+                    f"\nYour message: {msg.get('message', '')}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -186,8 +216,12 @@ class TestBlogNotifierCLI(StageTest):
         # Check if all expected links are present in the output
         for link in expected_output:
             if link not in output:
-                return CheckResult.wrong(f"Test was carried out for blog site with two blog posts {link} not found in "
-                                         f"the program output")
+                return CheckResult.wrong(
+                    f"Test was carried out for the case when blog-site has nested sites of depth 2 (a.html has link "
+                    f"for b.html and b.html has link for c.html and c.html has no links), for the sync sub-command, "
+                    f"list-posts --site {blog} returned wrong output."
+                    f"\nExpected_output: {expected_output} "
+                    f"\nYour program output: {output}")
 
         # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
@@ -196,10 +230,18 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_output:
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
+
+        ex_output = ""
+        for link in expected_output:
+            ex_output += f'{blog} {link}\n'
+
         return CheckResult.wrong(
-            f"Test was carried out for blog site with two nested blog posts seems like the last_link column in the "
-            f"blogs"
-            f"table is not updated after crawling")
+            f"Test was carried out for the case when blog-site has nested sites of depth 2 (a.html has link "
+            f"for b.html and b.html has link for c.html and c.html has no links), for the sync sub-command, "
+            f"--list command returned wrong output."
+            f" Seems that last_link column in the 'blogs' table is not updated after crawling"
+            f"\nExpected_output could be any of the following: {ex_output} "
+            f"\nYour program output: {output}")
 
     @dynamic_test
     def test5_crawling_with_nested_links_c(self):
@@ -228,14 +270,18 @@ class TestBlogNotifierCLI(StageTest):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', '')}")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 3 (a.html has link "
+                    f"for b.html and b.html has link for c.html, c.html has link for d.html, and d.html has no links),"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected sender_email: {config_map['client']['email']},"
+                    f"\nGot sender_email: {msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', '')}")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 3 (a.html has link "
+                    f"for b.html and b.html has link for c.html, c.html has link for d.html, and d.html has no links),"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected receiver_email: {config_map['client']['send_to']}, "
+                    f"\nGot receiver_email: {msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -245,8 +291,11 @@ class TestBlogNotifierCLI(StageTest):
                     break
             if not found:
                 CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {e_msg}")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 3 (a.html has link "
+                    f"for b.html and b.html has link for c.html, c.html has link for d.html, and d.html has no links),"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected message: {e_msg}"
+                    f"\nYour message: {msg.get('message', '')}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -258,8 +307,11 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_output:
             if link not in output:
                 return CheckResult.wrong(
-                    f"Test was carried out for blog site with three nested blog posts {link} not found in "
-                    f"the program output")
+                    f"Test was carried out for the case when blog-site has nested sites of depth 3 (a.html has link "
+                    f"for b.html and b.html has link for c.html, c.html has link for d.html, and d.html has no links),"
+                    f" for the sync sub-command, list-posts --site {blog} returned wrong output."
+                    f"\nExpected_output: {expected_output} "
+                    f"\nYour program output: {output}")
 
         # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
@@ -268,9 +320,18 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_output:
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
+
+        ex_output = ""
+        for link in expected_output:
+            ex_output += f'{blog} {link}\n'
+
         return CheckResult.wrong(
-            f"Test was carried out for blog site with three nested blog posts, seems like the last_link column in the "
-            f"blogs table is not updated after crawling")
+            f"Test was carried out for the case when blog-site has nested sites of depth 3 (a.html has link "
+            f"for b.html and b.html has link for c.html, c.html has link for d.html, and d.html has no links),"
+            f" for the sync sub-command, --list command returned wrong output."
+            f" Seems that last_link column in the 'blogs' table is not updated after crawling"
+            f"\nExpected_output could be any of the following: {ex_output} "
+            f"\nYour program output: {output}")
 
     @dynamic_test
     def test6_crawling_with_flat_multiple_pages(self):
@@ -299,14 +360,16 @@ class TestBlogNotifierCLI(StageTest):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', '')}")
+                    f"Test was carried out for the case when blog-site has multiple blog-post that themselves have no "
+                    f"further links, for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected sender_email: {config_map['client']['email']},"
+                    f"\nGot sender_email: {msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', '')}")
+                    f"Test was carried out for the case when blog-site has multiple blog-post that themselves have no "
+                    f"further links, for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected receiver_email: {config_map['client']['send_to']},"
+                    f"\nGot receiver_email: {msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -316,8 +379,10 @@ class TestBlogNotifierCLI(StageTest):
                     break
             if not found:
                 CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {e_msg}")
+                    f"Test was carried out for the case when blog-site has multiple blog-post that themselves have no "
+                    f"further links, for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected message: {e_msg}"
+                    f"\nYour message: {msg.get('message', '')}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -329,8 +394,10 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_output:
             if link not in output:
                 return CheckResult.wrong(
-                    f"Test was carried out for blog site with multiple blog posts {link} not found in "
-                    f"the program output")
+                    f"Test was carried out for the case when blog-site has multiple blog-post that themselves have no "
+                    f"further links, for the sync sub-command, list-posts --site {blog} returned wrong output."
+                    f"\nExpected_output: {expected_output} "
+                    f"\nYour program output: {output}")
 
         # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
@@ -339,9 +406,17 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_output:
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
+
+        ex_output = ""
+        for link in expected_output:
+            ex_output += f'{blog} {link}\n'
+
         return CheckResult.wrong(
-            f"Test was carried out for blog site with multiple blog posts seems like the last_link column in the blogs "
-            f"table is not updated after crawling")
+            f"Test was carried out for the case when blog-site has multiple blog-post that themselves have no "
+            f"further links, for the sync sub-command, --list command returned wrong output."
+            f" Seems that last_link column in the 'blogs' table is not updated after crawling"
+            f"\nExpected_output could be any of the following: {ex_output} "
+            f"\nYour program output: {output}")
 
     @dynamic_test
     def test7_crawling_with_nested_and_flat_posts(self):
@@ -370,14 +445,18 @@ class TestBlogNotifierCLI(StageTest):
             msg = self.mail_queue.get()
             if msg.get('from', "") != config_map['client']['email']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected sender_email: {config_map['client']['email']}, got sender_email: "
-                    f"{msg.get('from', '')}")
+                    f"Test was carried out for the case when blog-site has both flat blog-posts that do not have any "
+                    f"further links and also nested blog-posts that have links but the maximum depth is set to 2,"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected sender_email: {config_map['client']['email']},"
+                    f"\nGot sender_email: {msg.get('from', '')}")
             if msg.get('to', "") != config_map['client']['send_to']:
                 return CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected receiver_email: {config_map['client']['send_to']}, got receiver_email: "
-                    f"{msg.get('to', '')}")
+                    f"Test was carried out for the case when blog-site has both flat blog-posts that do not have any "
+                    f"further links and also nested blog-posts that have links but the maximum depth is set to 2,"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected receiver_email: {config_map['client']['send_to']}, "
+                    f"\nGot receiver_email: {msg.get('to', '')}")
             found = False
             e_msg = ""
             for expected_msg in expected_msgs:
@@ -387,8 +466,11 @@ class TestBlogNotifierCLI(StageTest):
                     break
             if not found:
                 CheckResult.wrong(
-                    f"Test was carried out for the sync sub-command, seems that sending emails is not correctly "
-                    f"implemented. expected message: {e_msg}")
+                    f"Test was carried out for the case when blog-site has both flat blog-posts that do not have any "
+                    f"further links and also nested blog-posts that have links but the maximum depth is set to 2,"
+                    f" for the sync sub-command, seems that sending emails is not correctly implemented."
+                    f"\nExpected message: {e_msg}"
+                    f"\nYour message: {msg.get('message', '')}")
 
         # testing if the posts table in the database was updated with correct values
         program = TestedProgram()
@@ -399,8 +481,11 @@ class TestBlogNotifierCLI(StageTest):
         for link in expected_links:
             if link not in output:
                 return CheckResult.wrong(
-                    f"Test was carried out for blog site with multiple blog posts flat and nested. {link} not found in "
-                    f"the program output")
+                    f"Test was carried out for the case when blog-site has both flat blog-posts that do not have any "
+                    f"further links and also nested blog-posts that have links but the maximum depth is set to 2,"
+                    f" for the sync sub-command, list-posts --site {blog} returned wrong output."
+                    f"\nExpected_output: {expected_links} "
+                    f"\nYour program output: {output}")
 
         # testing if the last_link column in the blogs table was updated
         program = TestedProgram()
@@ -410,9 +495,17 @@ class TestBlogNotifierCLI(StageTest):
             if f'{blog} {link}' in output:
                 return CheckResult.correct()
 
+        ex_output = ""
+        for link in expected_links:
+            ex_output += f'{blog} {link}\n'
+
         return CheckResult.wrong(
-            f"Test was carried out for blog site with multiple flat and nested blog posts seems like the last_link "
-            f"column in the blogs table is not updated after crawling")
+            f"Test was carried out for the case when blog-site has both flat blog-posts that do not have any "
+            f"further links and also nested blog-posts that have links but the maximum depth is set to 2,"
+            f" for the sync sub-command, --list command returned wrong output."
+            f" Seems that last_link column in the 'blogs' table is not updated after crawling"
+            f"\nExpected_output any of the following: {ex_output}"
+            f"\nYour program output: {output}")
 
 
 # Run the test cases
@@ -439,12 +532,7 @@ if __name__ == '__main__':
                                                       args=(mail_queue, stop_server_signal_queue))
         smtp_server_process.start()
         # getting aiosmtpd server's address
-        controller_info = {}
-        controller_info['hostname'] = mail_queue.get()
-        controller_info['port'] = mail_queue.get()
-        print(f'successfully received config of smtp server {controller_info}')
-        # config_map['server']['host'] = mail_queue.get()
-        # config_map['server']['port'] = mail_queue.get()
+        controller_info = {'hostname': mail_queue.get(), 'port': mail_queue.get()}
 
         # running tests
         TestBlogNotifierCLI(mail_queue, stop_server_signal_queue).run_tests()

@@ -101,10 +101,6 @@ func parseConfig(configFile string) error {
 
 	mailAddr = fmt.Sprintf("%s:%d", conf.Server.Host, conf.Server.Port)
 	sender, password, recipient = conf.Client.Email, conf.Client.Password, conf.Client.SendTo
-	//fmt.Printf("mode: %s\n", conf.Mode)
-	//fmt.Printf("email_server: %s\n", mailAddr)
-	//fmt.Printf("client: %s %s %s\n", sender, password, recipient)
-	//fmt.Printf("telegram: %s@%s\n", conf.Telegram.BotToken, conf.Telegram.Channel)
 	return nil
 }
 

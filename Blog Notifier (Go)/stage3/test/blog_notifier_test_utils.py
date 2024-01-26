@@ -68,9 +68,11 @@ post_template = """<div class="post">
 html_files = []
 blog_files = {}
 
+
 def remove_fake_blog():
     folder_path = os.path.join(os.getcwd(), FAKE_BLOG)
     shutil.rmtree(folder_path)
+
 
 def create_html_file(file_name, content):
     folder_path = os.path.join(os.getcwd(), FAKE_BLOG)
@@ -79,12 +81,6 @@ def create_html_file(file_name, content):
     file_path = os.path.join(folder_path, file_name)
     with open(file_path, 'w') as file:
         file.write(content)
-
-
-# def remove_html_files():
-#     for file_name in html_files:
-#         if os.path.exists(file_name):
-#             os.remove(file_name)
 
 
 def generate_random_text(k: int) -> str:
@@ -163,12 +159,11 @@ def create_blog_site_with_nested_posts(depth: int, test_name=NESTED_LINKS_TEST):
 # a blog with the following pattern will be created: a blog site with links to multiple blog posts, Some of these
 # blog posts can have nested links. some blog posts have nested and others have flat pattern
 def create_blog_site_with_nested_and_flat_posts():
-
-    def visualize_nested_blogs(blog_posts_list: list, viz_file_name:str):
+    def visualize_nested_blogs(blog_posts_list: list, viz_file_name: str):
         l = ""
         n = 0
         for el in blog_posts_list:
-            l += f'{" "*n}{el}\n'
+            l += f'{" " * n}{el}\n'
             n += 1
         with open(viz_file_name, 'w') as f:
             f.write(l)
