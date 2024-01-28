@@ -30,7 +30,32 @@ if err != nil {
 }
 </code></pre>
 
-<p> In this project, we'll be testing your code on a local SMTP server that doesn't require authentication. Therefore, the <code>auth</code> variable in the above example can be set to <code>nil</code>. Your program is expected to parse a provided configuration file, which contains essential information such as the mail server address and port, sender's email address and password, and recipient's email address. Utilize the code from Stage 1 to parse the YAML-formatted configuration file for this task.</p>
+<p> In this project, we'll be testing your code on a local SMTP server that doesn't require authentication. Therefore, the <code>auth</code> variable in the above example can be set to <code>nil</code>. Your program is expected to parse a provided configuration file, which contains essential information such as the mail server address and port, sender's email address and password, and recipient's email address. Utilize the code from Stage 1 to parse the YAML-formatted configuration file for this task. Below is an example configuration file:</p>
+
+<pre><code class="language-yaml">mode: mail
+
+server:
+  host: myemailserver.com
+  port: 465
+
+client:
+  email: sender@example.com
+  password: 123456
+  send_to: recipient@example.net
+
+telegram:
+  bot_token: abcdef123456
+  channel: mychannel</code></pre>
+
+<p>The configuration file passed as input, will have exactly the same field but with different values. You must parse this file and use the values from this file for sending email. For instance:</p>
+
+<p><code>mailServerAddr</code> should be set to <code>myemailserver.com:465</code>, derived from <code>server.host:server.port</code>.</p>
+
+<p><code>senderEmail</code> should be set to <a href="mailto:sender@example.com" rel="noopener noreferrer nofollow"><code>sender@example.com</code>.</a></p>
+
+<p><code>recipientEmail</code> should be set to <a href="mailto:recipient@example.net" rel="noopener noreferrer nofollow"><code>recipient@example.net</code>.</a></p>
+
+<p><code>msg</code> should follow the format: <strong>New blog-post &lt;blog-post-url&gt; on blog &lt;blog-site-url&gt;</strong>.</p>
 
 <h2>Examples</h2>
 
