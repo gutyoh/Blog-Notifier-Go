@@ -1,22 +1,23 @@
 <h2>Description</h2>
 
-<p>In this stage of the Blog Notifier project, we focus on the core functionality that brings the blog monitoring application to life. The application is now equipped to crawl through specified blogs, detect new posts, store them in a database, and send email notifications to users about these updates. This functionality is crucial in real-world scenarios where users need timely updates from their favorite blogs without manually checking for new content.</p>
+<p>In this stage of the Blog Notifier project, we focus on the core functionality that brings the blog monitoring application to life. The application is now equipped to crawl through specified blogs, detect new posts, store them in a database, and send email notifications to users about these updates; this functionality is crucial in scenarios where users need timely updates from their favorite blogs without manually checking for new content.</p>
 
 <h2>Objectives</h2>
 
-<p>In this stage, your objective is to implement the <code>sync --conf</code> sub-command for the CLI. This sub-command is must perform the following tasks:</p>
+<p>Your task is to implement the <code>sync --conf</code> sub-command for the CLI; this sub-command must perform the following tasks:</p>
 
 <ol>
-  <li>Take the configuration filename as input, parse the YAML file, please reuse the code created in Stage 1 for this purpose.</li>
-  <li>Crawl each blog site listed in the <code>blogs</code> table of the database (watch list) to identify new blog-posts, utilizing the code implemented in Stage 4 for the crawl functionality.</li>
-  <li>Insert a new entry into the <code>posts</code> table for every newly discovered blog-post, please reuse the code from Stage 4 that accomplishes this.</li>
-  <li>Update the the <code>last_link</code> column in the <code>blogs</code> table of the database for the corresponding blog if a new blog-post is discovered. The <code>last_link</code> column can be updated with <strong>any</strong> new blog-post discovered <strong>on that</strong> blog site. Please reuse the code you created in stage 4, that implements this functionality.</li>
-  <li>Additionally, send an email notification to the user for each new blog post discovered.</li>
+    <li>Take the configuration filename as input and parse the YAML file.</li>
+    <li>Crawl each blog site listed in the <code>blogs</code> table of the database (watch list) to identify new blog-posts, using the code implemented in Stage 4 for the crawl functionality.</li>
+    <li>Insert a new entry into the <code>posts</code> table for every newly discovered blog-post.</li>
+    <li>Update the&nbsp;<code>last_link</code> column in the <code>blogs</code> table for the corresponding blog if a new blog-post is discovered. The <code>last_link</code> column can be updated with <strong>any</strong> new blog-post discovered <strong>on that</strong> blog site.</li>
+    <li>Additionally, send an email notification to the user for each new blog post discovered.</li>
 </ol>
 
 <p>In Go, you can send an email using <a href="https://pkg.go.dev/net/smtp" rel="noopener noreferrer nofollow"><code>net/smtp</code> package</a>;</p>
 
-<pre><code class="language-go">// Creating an authentication object for SMTP (Simple Mail Transfer Protocol).
+<pre>
+<code class="language-go">// Creating an authentication object for SMTP (Simple Mail Transfer Protocol).
 // It requires the sender's email address, password, and the URL of the email server.
 auth := smtp.PlainAuth("", "user@example.com", "password", "mail.example.com")
 
@@ -30,9 +31,12 @@ if err != nil {
 }
 </code></pre>
 
-<p> In this project, we'll be testing your code on a local SMTP server that doesn't require authentication. Therefore, the <code>auth</code> variable in the above example can be set to <code>nil</code>. Your program is expected to parse a provided configuration file, which contains essential information such as the mail server address and port, sender's email address and password, and recipient's email address. Utilize the code from Stage 1 to parse the YAML-formatted configuration file for this task. Below is an example configuration file:</p>
+<p>The test cases will check your Go program on a local SMTP server that doesn&#39;t require authentication. Therefore, the <code>auth</code> variable in the above example should be set to <code>nil</code>. Your program is expected to parse a provided configuration file that contains essential information such as the mail server address and port, the sender&#39;s email address and password, and the recipient&#39;s email address.</p>
 
-<pre><code class="language-yaml">mode: mail
+<p>You should use the code implemented in Stage 1 to parse the YAML-formatted configuration file for this task. Below is an example configuration file:</p>
+
+<pre>
+<code class="language-yaml">mode: mail
 
 server:
   host: myemailserver.com
@@ -47,27 +51,27 @@ telegram:
   bot_token: abcdef123456
   channel: mychannel</code></pre>
 
-<p>The configuration file passed as input, will have exactly the same field but with different values. You must parse this file and use the values from this file for sending email. For instance:</p>
+<p>The configuration file passed as input will have the same fields but different values. You must parse this file and use the values from this file to send emails. For instance:</p>
 
-<p><code>mailServerAddr</code> should be set to <code>myemailserver.com:465</code>, derived from <code>server.host:server.port</code>.</p>
+<p><code>mailServerAddr</code> in the code snippet above should be set to <code>myemailserver.com:465</code>, derived from <code>server.host:server.port</code>.</p>
 
-<p><code>senderEmail</code> should be set to <a href="mailto:sender@example.com" rel="noopener noreferrer nofollow"><code>sender@example.com</code>.</a></p>
+<p><code>senderEmail</code> in the code snippet above should be set to <a href="mailto:sender@example.com" rel="noopener noreferrer nofollow"><code>sender@example.com</code>.</a></p>
 
-<p><code>recipientEmail</code> should be set to <a href="mailto:recipient@example.net" rel="noopener noreferrer nofollow"><code>recipient@example.net</code>.</a></p>
+<p><code>recipientEmail</code> in the code snippet above should be set to <a href="mailto:recipient@example.net" rel="noopener noreferrer nofollow"><code>recipient@example.net</code>.</a></p>
 
-<p><code>msg</code> should follow the format: <strong>New blog-post &lt;blog-post-url&gt; on blog &lt;blog-site-url&gt;</strong>.</p>
+<p><code>msg</code> in the code snippet above should follow the format: <strong>New blog-post &lt;blog-post-url&gt; on blog &lt;blog-site-url&gt;</strong>.</p>
 
 <h2>Examples</h2>
 
-<p>In this stage your program will be tested for the sub-command, <code>sync --conf "credentials.yaml"</code>.</p>
+<p>In this stage your program will be tested for the sub-command, <code>sync --conf &quot;credentials.yaml&quot;</code>.</p>
 
 <p><strong>Example 1: Running the <code>sync</code> sub-command:</strong></p>
 
-<p>When executing the command <code>blognotifier sync --conf "credentials.yaml"</code> , no output is expected.However, the implementation will undergo testing based on the output of the following commands implemented in previous stages:</p>
+<p>When executing the command <code>blognotifier sync --conf &quot;credentials.yaml&quot;</code> , no output is expected. However, the implementation will undergo testing based on the output of the following commands implemented in previous stages:</p>
 
 <ul>
-  <li><code>--migrate</code></li>
-  <li><code>--explore</code></li>
-  <li><code>--list</code></li>
-  <li><code>list-posts --site</code></li>
+    <li><code>--migrate</code></li>
+    <li><code>--explore</code></li>
+    <li><code>--list</code></li>
+    <li><code>list-posts --site</code></li>
 </ul>

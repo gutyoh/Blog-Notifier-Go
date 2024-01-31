@@ -23,6 +23,9 @@
 <table>
   <thead>
   <tr>
+    <th colspan="3" style="font-size: 18px; text-align: center;">blogs</th>
+  </tr>
+  <tr>
     <th>Column</th>
     <th>Type</th>
     <th>Constraints</th>
@@ -46,6 +49,9 @@
 
 <table>
   <thead>
+  <tr>
+    <th colspan="3" style="font-size: 18px; text-align: center;">posts</th>
+  </tr>
   <tr>
     <th>Column</th>
     <th>Type</th>
@@ -72,6 +78,9 @@
 
 <table>
   <thead>
+  <tr>
+    <th colspan="3" style="font-size: 18px; text-align: center;">mails</th>
+  </tr>
   <tr>
     <th>Column</th>
     <th>Type</th>
@@ -132,20 +141,20 @@
 Database 'blogs.sqlite3' created successfully
 Tables 'blogs', 'posts', and 'mails' initialized</code></pre>
 
-<p><em><span style="color: #ff4363;">Your program must create a sqlite database with file name: <code>blogs.sqlite3</code> </span></em></p>
+<p>⚠️Your program must create a SQLite database with the file name: <code>blogs.sqlite3</code></p>
 
 <p><strong>Example 2: Using the <code>--explore</code> flag</strong></p>
 
 <p>This command adds an entry to the <code>blogs</code> table with both <code>site</code> and <code>last_link</code> set to "<a href="https://hyperskill.org/blog/" rel="noopener noreferrer nofollow" target="_new">https://hyperskill.org/blog/</a>".</p>
 
-<p><em>Below is the expected output of the</em> <code>--explore</code> <em>command if the blog does not already exist in the database:</em> <em><span style="color: #ff4363;">: </span></em></p>
+<p><em>Below is the expected output of the</em> <code>--explore</code> <em>command if the blog does not already exist in the database:</em></p>
 
 <pre><code class="language-bash">blognotifier --explore "https://hyperskill.org/blog/"
 New blog added to watchlist:
 Site: https://hyperskill.org/blog/
 Last link: https://hyperskill.org/blog/</code></pre>
 
-<p><em>Below is the expected output of the</em> <code>--explore</code> <em>command if the blog already exist in the database:</em></p>
+<p><em>Below is the expected output of the</em> <code>--explore</code> <em>command if the blog already exists in the database:</em></p>
 
 <pre><code class="language-bash">blognotifier --explore "https://hyperskill.org/blog/"
 https://hyperskill.org/blog/ already exists in the watch list</code></pre>
@@ -179,7 +188,7 @@ https://hyperskill.org/blog/ already exists in the watch list</code></pre>
 https://blog1.com https://blog1.com/post100
 https://blog2.com https://blog2.com/post1</code></pre>
 
-<p><strong>Example 4: Using the </strong><code>--update-last-link</code><strong> flag</strong></p>
+<p><strong>Example 4: Using the <code>--update-last-link</code> flag</strong></p>
 
 <p>This command updates the <code>last_link</code> column in the <code>blogs</code> table to <code>newPost</code> for the entry where <code>site</code> is <code>blogSite</code>.</p>
 
@@ -192,7 +201,7 @@ The last link for 'blogSite' updated to 'newPost'</code></pre>
 
 <p>After running this command, the program must remove the entry from the <code>blogs</code> table where <code>site</code> equals <code>blogSite</code>.</p>
 
-<p><em>Below is the expected output of the</em> <code>--remove</code> <em>command if the blog already exist in the database:</em></p>
+<p><em>Below is the expected output of the</em> <code>--remove</code> <em>command if the blog already exists in the database:</em></p>
 
 <pre><code class="language-bash">blognotifier --remove "blogSite"
 'blogSite' removed from the watch list.</code></pre>

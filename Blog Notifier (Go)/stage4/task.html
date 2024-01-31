@@ -1,10 +1,10 @@
 <h2>Description</h2>
 
-<p>In this stage of the Blog Notifier project, you will add a new functionality to monitor specific blog sites for new content updates; this is akin to a personalized news feed where updates from favorite blogs are not missed. By implementing a command-line interface, users can interact with the program to manage their list of blogs, check for new posts, and update their watchlist.</p>
+<p>In this stage of the Blog Notifier project, you will implement a new functionality to monitor specific blog sites for new content updates; this is akin to a personalized news feed where updates from favorite blogs are not missed. In short, this will allow users to interact with the program to manage their list of blogs, check for new posts, and update their watchlist.</p>
 
 <h2>Objectives</h2>
 
-<p>In this stage, your objective is to enhance the Blog Notifier command line tool by introducing a new flag, <code>--crawl</code>, to its functionality. The implementation of this flag should involve crawling all the websites currently listed in the <code>blogs</code> table (watch list). If new blog-posts are discovered during the crawl, they should be inserted into the <code>posts</code> table, and the <code>last_link</code> column for the corresponding blog should be updated with <strong>any</strong> newly found blog-post. This update is crucial for maintaining the latest information on the last visited link for each blog site.</p>
+<p>Your task is to enhance the Blog Notifier CLI by introducing a new flag, <code>--crawl</code>, to its functionality. The implementation of this flag should involve crawling all the websites currently listed in the <code>blogs</code> table (watch list). If new blog-posts are discovered during the crawl, they should be inserted into the <code>posts</code> table, and the <code>last_link</code> column for the corresponding blog should be updated with any newly found blog-post; this update is crucial for maintaining the latest information on the last visited link for each blog site.</p>
 
 <p>Additionally, as part of this stage, a new sub-command <code>list-posts</code> will be created. This sub-command requires the <code>--site</code> flag and is designed to list all posts for a specific blog site. This feature enhances the utility of the CLI by providing users with a convenient way to view all posts associated with a particular blog site.</p>
 
@@ -14,10 +14,13 @@
 
 <p><strong>Example 1: Using the <code>--crawl</code> flag</strong></p>
 
-<p>Consider the existing blog sites currently listed in the <code>blogs</code> table (watch list) within the database.</p>
+<p>Consider the existing blog sites currently listed in the <code>blogs</code> table (watch list) within the database:</p>
 
 <table border="1" cellpadding="1" cellspacing="1" style="width: 500px;">
   <thead>
+  <tr>
+    <th colspan="3" style="font-size: 18px; text-align: center;">blogs</th>
+  </tr>
   <tr>
     <th>site</th>
     <th>last_link</th>
@@ -39,6 +42,9 @@
 
 <table border="1" cellpadding="1" cellspacing="1" style="width: 500px;">
   <thead>
+  <tr>
+    <th colspan="3" style="font-size: 18px; text-align: center;">posts</th>
+  </tr>
   <tr>
     <th>site</th>
     <th>link</th>
@@ -71,6 +77,9 @@
 <table border="1" cellpadding="1" cellspacing="1" style="width: 500px;">
   <thead>
   <tr>
+    <th colspan="3" style="font-size: 18px; text-align: center;">blogs</th>
+  </tr>
+  <tr>
     <th>site</th>
     <th>last_link</th>
   </tr>
@@ -87,20 +96,20 @@
 
 <p>Note the <code>last_link</code> column for <code>blog1</code> could be either <code>post_1</code> or <code>post_2</code>. Similarly the <code>last_link</code> column for <code>blog2</code> could be either <code>post_a</code>, <code>post_b</code> or <code>post_c</code>.</p>
 
-<p>Additionally, your program will be tested for the sub-command, <code>list-posts</code>. Upon running the command <code>blognotifier list-posts --site blog2</code> the program should display a list all the blog-posts associated with the specified input(blog-site), which is <code>blog2</code> in this instance. The expected output is as follows:</p>
+<p>Additionally, your program will be tested for the sub-command, <code>list-posts</code>. Upon running the command <code>blognotifier list-posts --site blog2</code> the program should display a list of all the blog-posts associated with the specified input (blog-site), which is <code>blog2</code> in this instance. The expected output is as follows:</p>
 
-<pre><code>blognotifier list-posts --site blog2
+<pre><code class="language-no-highlight">blognotifier list-posts --site blog2
 post_a
 post_b
 post_c</code></pre>
 
 <p>Similarly, upon running the command <code>blognotifier list-posts --site blog1</code>, the expected output is as follows:</p>
 
-<pre><code>blognotifier list-posts --site blog1
+<pre><code class="language-no-highlight">blognotifier list-posts --site blog1
 post_1
 post_2</code></pre>
 
-<p>Please reuse the code from the previous stages. All the sub-commands from the previous stages will also be tested. Specifically we will test the following sub-commands</p>
+<p>⚠️ Note that all the sub-commands from previous stages will also be tested; this means you should reuse the code from previous stages. Specifically, the test cases will check the implementation of the following sub-commands:</p>
 
 <ul>
   <li><code>--migrate</code></li>

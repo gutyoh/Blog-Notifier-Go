@@ -1,12 +1,12 @@
 <h2>Description</h2>
 
-<p>A web crawler is an invaluable  tool for users who want to keep an eye on new content, references, or resources that emerge on a blog. In this stage, you will build a CLI sub-command and also create a program that can crawl a website recursively to a specified depth, collecting links and presenting them in a user-friendly manner.</p>
+<p>A web crawler is an invaluable tool for users who want to keep an eye on new content, references, or resources that emerge on a blog. In this stage, you will build a CLI sub-command and create a program that can crawl a website recursively to a specified depth, collecting links and presenting them in a user-friendly manner.</p>
 
 <h2>Objectives</h2>
 
 <p>Your task is to implement the <code>--crawl-site</code> flag for the Blog Notifier CLI; this command should accept a website URL as input, and the program needs to crawl this website and find all the hyperlinks on the site recursively up to a maximum depth of 3. The program should output a list of unique hyperlinks found, excluding any duplicates that may have been encountered.</p>
 
-<p>In Go, you can fetch and parse HTML files using the <code>net/http</code> and <code>goquery</code> packages; the process typically involves fetching the website using its URL and then using methods from the <code>goquery</code> package to find all the hyperlinks. Here's a simplified example to illustrate this process.</p>
+<p>In Go, you can fetch and parse HTML files using the <code>net/http</code> and <code>goquery</code> packages; the process typically involves fetching the website using its URL and then using methods from the <code>goquery</code> package to find all the hyperlinks. Below is a simplified example to illustrate this process.</p>
 
 <p>First, you need to fetch the website by making an HTTP get request to its URL with the <code>http.Get()</code> function from the <code>net/http</code> package:</p>
 
@@ -55,9 +55,9 @@ doc.Find("a").Each(func(i int, s *goquery.Selection) {
 
 <p><strong>Example 1: Crawling a blog site with multiple pages.</strong></p>
 
-<p><em>Below is the expected output of the</em> <code>--crawl-site</code> <em>command:</em></p>
+<p>Below is the expected output of the <code>--crawl-site</code> command:</p>
 
-<pre><code>$ go run main.go --crawl-site "https://brianpzaide.github.io/blog-notifier"
+<pre><code class="language-no-highlight">blognotifier --crawl-site "https://brianpzaide.github.io/blog-notifier"
 https://brianpzaide.github.io/blog-notifier/a.html
 https://brianpzaide.github.io/blog-notifier/b.html
 https://brianpzaide.github.io/blog-notifier/c.html
@@ -68,9 +68,9 @@ https://brianpzaide.github.io/blog-notifier/f.html
 
 <p><strong>Example 2: Crawling a blog site with no hyperlinks.</strong></p>
 
-<p><em>Below is the expected output of the</em> <code>--crawl-site</code> <em>command for the site that does not have any blog-posts yet:</em></p>
+<p>Below is the expected output of the <code>--crawl-site</code> command for the a that does NOT have any blog posts:</p>
 
-<pre><code>$ go run main.go --crawl-site "http://noblogpostsyet.com"
+<pre><code class="language-no-highlight">blognotifier --crawl-site "http://noblogpostsyet.com"
 No blog posts found for http://noblogpostsyet.com
 </code></pre>
 
