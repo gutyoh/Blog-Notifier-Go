@@ -3,10 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/PuerkitoBio/goquery"
+	"net/http"
 )
 
 const MAX_DEPTH = 3
@@ -15,7 +13,7 @@ const MAX_DEPTH = 3
 func findAllLinks(site string) ([]string, error) {
 	res, err := http.Get(site)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not reach the site: %s", site)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
@@ -28,13 +26,15 @@ func findAllLinks(site string) ([]string, error) {
 		return nil, err
 	}
 
+	// Initialize an empty slice to store discovered links
 	links := make([]string, 0)
 
-	// Find the review items
+	// Iterate over all 'a' (anchor) elements in the HTML document
 	doc.Find("a").Each(func(i int, s *goquery.Selection) {
-		// For each item found, get the title
+		// Extract the 'href' attribute value from each 'a' element
 		link, exists := s.Attr("href")
 		if exists {
+			// Add the discovered link to the slice
 			links = append(links, link)
 		}
 	})
@@ -43,22 +43,21 @@ func findAllLinks(site string) ([]string, error) {
 
 // recursive crawl function
 func _crawl(link string, links *[]string, depth int) error {
-	if depth > MAX_DEPTH {
+	if depth >= MAX_DEPTH {
 		return nil
 	}
 	_links, err := findAllLinks(link)
 	if err == nil {
 		for _, _link := range _links {
-			// fmt.Printf("%s at depth %d\n", _link, depth)
 			*links = append(*links, _link)
 			err := _crawl(_link, links, depth+1)
 			if err != nil {
-				return fmt.Errorf("%s: error in recursive crawl", link)
+				return err
 			}
 		}
 		return nil
 	} else {
-		return fmt.Errorf("%s: error in finAllLinks", link)
+		return err
 	}
 }
 
@@ -86,15 +85,19 @@ func crawl(blogSite string) ([]string, error) {
 
 func main() {
 	// Parse command-line arguments
-	crawlFlag := flag.String("crawlSite", "", "Crawl the given website")
+	crawlFlag := flag.String("crawl-site", "", "Crawl the given website")
 
 	flag.Parse()
 
 	if *crawlFlag != "" {
-		fmt.Println("crawl")
 		_links, err := crawl(*crawlFlag)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err.Error())
+			return
+		}
+		if len(_links) == 0 {
+			fmt.Printf("No blog posts found for %s\n", *crawlFlag)
+			return
 		}
 		for _, _link := range _links {
 			fmt.Println(_link)

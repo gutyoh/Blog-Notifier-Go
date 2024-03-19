@@ -12,3 +12,7 @@ files:
     visible: true
   - name: go.sum
     visible: true
+  - name: stage2.exe
+    visible: true
+  - name: blogs.sqlite3
+    visible: true

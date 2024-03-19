@@ -1,7 +1,12 @@
 import os
+import random
 
+import yaml
 from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 
+
+def get_random_text(k:int):
+    return ''.join(random.choices("abcdefghijklmnopqrstuvwxyz123456789", k=k))
 
 class TestBlogNotifierCLI(StageTest):
 
@@ -86,7 +91,53 @@ class TestBlogNotifierCLI(StageTest):
         return CheckResult.correct()
 
     @dynamic_test
-    def test3_invalid_yaml_file(self):
+    def test3_random_yaml_file(self):
+        _mode = {'mode': random.choice(['mail', 'telegram'])}
+
+        _server = {'server': {
+            'host': f'https://{get_random_text(7)}.com',
+            'port': random.randint(2500, 8080)}
+        }
+
+        _client = {'client': {
+            'email': f'{get_random_text(7)}.{get_random_text(4)}.{random.choice(["net", "com"])}',
+            'password': f'{get_random_text(7)}',
+            'send_to': f'{get_random_text(7)}.{get_random_text(4)}.{random.choice(["net", "com"])}'
+        }}
+
+        _telegram = {'telegram': {
+            'bot_token': get_random_text(7),
+            'channel': get_random_text(6)
+        }}
+
+        config_map = {}
+        config_map.update(**_mode, **_server, **_client, **_telegram)
+
+        yaml_content = yaml.dump(config_map)
+
+        self.create_yaml_file('credentials.yaml', yaml_content)
+
+        program = TestedProgram()
+        output = program.start('--config', 'credentials.yaml').strip()
+
+        # Remove the created YAML file
+        self.remove_yaml_file('credentials.yaml')
+
+        expected_output = (f"mode: {_mode['mode']}\n"
+                           f"email_server: {_server['server']['host']}:{_server['server']['port']}\n"
+                           f"client: {_client['client']['email']} {_client['client']['password']} {_client['client']['send_to']}\n"
+                           f"telegram: {_telegram['telegram']['bot_token']}@{_telegram['telegram']['channel']}")
+
+        if output != expected_output:
+            return CheckResult.wrong(
+                f"The output of the program does not match the expected output for the second YAML file."
+                f"\nYour program output: {output}"
+                f"\nExpected output: {expected_output}")
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test4_invalid_yaml_file(self):
         program = TestedProgram()
         output = program.start('--config', 'nonexistent.yaml').lower().strip()
         expected_error = "file 'nonexistent.yaml' not found"
@@ -98,7 +149,7 @@ class TestBlogNotifierCLI(StageTest):
         return CheckResult.correct()
 
     @dynamic_test
-    def test4_no_command_input(self):
+    def test5_no_command_input(self):
         program = TestedProgram()
         output = program.start().lower().strip()
         expected_error = "no command input specified"

@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
@@ -15,15 +14,16 @@ import (
 )
 
 const (
+	MAX_DEPTH          = 3
 	BLOGS_DB           = "./blogs.sqlite3"
 	MAIL_MESSAGE       = `New blog post %s on blog %s`
 	CREATE_BLOGS_TABLE = `CREATE TABLE IF NOT EXISTS blogs (
-		site                    VARCHAR(256) PRIMARY KEY,
-		last_link               VARCHAR(256)
+		site                    TEXT PRIMARY KEY,
+		last_link               TEXT
 	)`
 	CREATE_POSTS_TABLE = `CREATE TABLE IF NOT EXISTS posts (
-		site    VARCHAR(256),
-		link    VARCHAR(256),
+		site    TEXT,
+		link    TEXT,
 		FOREIGN KEY (site) REFERENCES blogs(site) ON DELETE CASCADE
 	)`
 	CREATE_MAILS_TABLE = `CREATE TABLE IF NOT EXISTS mails (
@@ -45,44 +45,21 @@ const (
 	FETCH_POSTS_FOR_BLOG = `SELECT link FROM posts WHERE site = ?`
 )
 
-type emailServer struct {
-	Host string
-	Port int
-}
-
-type emailClient struct {
-	Email    string
-	Password string
-	SendTo   string `yaml:"send_to"`
-}
-
-type blogNotifierConfig struct {
-	Server emailServer
-	Client emailClient
-}
-
-type blogPostsLink struct {
-	site string
-	link string
-}
-
-type mailStruct struct {
-	id  int
-	msg string
+type blogPostsLinks struct {
+	site  string
+	links []string
 }
 
 // Getting database connection, It is important to note that To enable foreign key support in SQLite,
 // you need to ensure that the foreign key constraints are enabled for each database connection.
 // This must be done after opening a database connection using SQLite.
 func getDBConnection() (*sql.DB, error) {
-	// os.Remove(BLOGS_DB)
 	db, err := sql.Open("sqlite3", BLOGS_DB)
 	if err != nil {
 		return nil, err
 	}
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-		fmt.Println("Error enabling foreign key constraints:", err)
 		return nil, err
 	}
 	return db, nil
@@ -90,7 +67,6 @@ func getDBConnection() (*sql.DB, error) {
 
 // Creating Database tables //
 func migrate() error {
-
 	db, err := getDBConnection()
 	if err != nil {
 		return err
@@ -98,26 +74,23 @@ func migrate() error {
 	defer db.Close()
 	_, err = db.Exec(CREATE_BLOGS_TABLE)
 	if err != nil {
-		fmt.Println("error creating blogs table")
-		return err
+		return fmt.Errorf("error creating blogs table")
 	}
 
 	_, err = db.Exec(CREATE_POSTS_TABLE)
 	if err != nil {
-		fmt.Println("error creating posts table")
-		return err
+		return fmt.Errorf("error creating posts table")
 	}
 
 	_, err = db.Exec(CREATE_MAILS_TABLE)
 	if err != nil {
-		fmt.Println("error creating mails table")
-		return err
+		return fmt.Errorf("error creating mails table")
 	}
 	return nil
 }
 
+// does the blog with name 'site' exists
 func entityExists(query string, args ...any) (bool, error) {
-	// does the blog with name 'site' exists
 	db, err := getDBConnection()
 	if err != nil {
 		return false, err
@@ -146,16 +119,23 @@ func postExists(site, post string) (bool, error) {
 
 // function to add a new site
 func addNewSite(site, link string) error {
-	db, err := getDBConnection()
+	ok, err := blogExists(site)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-	_, err = db.Exec(ADD_NEW_BLOG, site, link)
-	if err != nil {
-		return err
+	if !ok {
+		db, err := getDBConnection()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		_, err = db.Exec(ADD_NEW_BLOG, site, link)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil
+	return fmt.Errorf("%s already exists in the watch list", site)
 }
 
 // first check if the post already exists in the database, if not insert a new entry
@@ -212,72 +192,92 @@ func listAllSites() (map[string]string, error) {
 	for rows.Next() {
 		_site, last_link := "", ""
 		rows.Scan(&_site, &last_link)
-
-		// postLinks = append(postLinks, _site)
 		blogAndLastLink[_site] = last_link
-		fmt.Printf("retrieved site: %s, last_link: %s\n", _site, last_link)
 	}
 	return blogAndLastLink, nil
 }
 
+// list all the the blog posts belonging to the blog site that is in the watchlist
 func getPostsForSite(site string) ([]string, error) {
-	db, err := getDBConnection()
+	ok, err := blogExists(site)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
-	rows, err := db.Query(FETCH_POSTS_FOR_BLOG, site)
-	if err != nil {
-		return nil, err
-	}
-	existingPosts := make([]string, 0)
-	for rows.Next() {
-		_l := ""
-		err := rows.Scan(&_l)
-		if err == nil {
-			existingPosts = append(existingPosts, _l)
+	if ok {
+		db, err := getDBConnection()
+		if err != nil {
+			return nil, err
 		}
+		defer db.Close()
+		rows, err := db.Query(FETCH_POSTS_FOR_BLOG, site)
+		if err != nil {
+			return nil, err
+		}
+		existingPosts := make([]string, 0)
+		for rows.Next() {
+			_l := ""
+			err := rows.Scan(&_l)
+			if err == nil {
+				existingPosts = append(existingPosts, _l)
+			}
+		}
+		return existingPosts, nil
 	}
-	return existingPosts, nil
+	return nil, fmt.Errorf("%s does not exist in the watch list", site)
+
 }
 
-// implements a functionality to remove a site
+// implements a functionality to remove a site from the watchlist
 func removeSite(site string) error {
-	// remove a site from the watch list
-	db, err := getDBConnection()
+	ok, err := blogExists(site)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-	_, err = db.Exec(REMOVE_SITE, site)
-	if err != nil {
-		fmt.Printf("error deleting a site %s from the blogs table\n", site)
-		return err
+	if ok {
+		// remove a site from the watch list
+		db, err := getDBConnection()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		_, err = db.Exec(REMOVE_SITE, site)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil
+	return fmt.Errorf("%s does not exist in the watch list", site)
 }
 
-// updates the last visited site if new post in the blog site
+// updates the last visited site if new post is added to the blog
 func updateLastSiteVisited(site, link string) error {
-	// remove a site from the watch list
-	db, err := getDBConnection()
+	ok, err := blogExists(site)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-	_, err = db.Exec(UPDATE_BLOG, link, site)
-	if err != nil {
-		fmt.Printf("error updating last_link %s for blog %s in the blogs table\n", link, site)
-		return err
+	if ok {
+		db, err := getDBConnection()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		_, err = db.Exec(UPDATE_BLOG, link, site)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return nil
+			}
+			return err
+		}
+		return nil
 	}
-	return nil
+	return fmt.Errorf("%s does not exist in the watch list", site)
 }
 
 // finds all the links in a blog post
 func findAllLinks(site string) ([]string, error) {
 	res, err := http.Get(site)
 	if err != nil {
-		return nil, err
+		return nil, err //fmt.Errorf("could not reach the site: %s", site)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
@@ -290,13 +290,15 @@ func findAllLinks(site string) ([]string, error) {
 		return nil, err
 	}
 
+	// Initialize an empty slice to store discovered links
 	links := make([]string, 0)
 
-	// Find the review items
+	// Iterate over all 'a' (anchor) elements in the HTML document
 	doc.Find("a").Each(func(i int, s *goquery.Selection) {
-		// For each item found, get the title
+		// Extract the 'href' attribute value from each 'a' element
 		link, exists := s.Attr("href")
 		if exists {
+			// Add the discovered link to the slice
 			links = append(links, link)
 		}
 	})
@@ -304,14 +306,11 @@ func findAllLinks(site string) ([]string, error) {
 }
 
 // recursive crawl function
-func _crawl(site, link string, links *[]blogPostsLink) error {
+func _crawl(site, link string, links *[]string) error {
 	_links, err := findAllLinks(link)
 	if err == nil {
 		for _, _link := range _links {
-			*links = append(*links, blogPostsLink{
-				site: site,
-				link: _link,
-			})
+			*links = append(*links, _link)
 			err := _crawl(site, _link, links)
 			if err != nil {
 				return fmt.Errorf("%s: error in recursive crawl", site)
@@ -323,39 +322,41 @@ func _crawl(site, link string, links *[]blogPostsLink) error {
 	}
 }
 
-// implements the crawl functionality
+// implements the crawl functionality. Crawls all the sites in the watch list
 func crawl() (map[string][]string, error) {
-	// crawl the sites
-
 	// get the all the blogs
 	blogs, err := listAllSites()
 	if err != nil {
-		fmt.Printf("error fetching items from blogs table\n")
-		return nil, err
+		return nil, fmt.Errorf("error fetching items from blogs table\n")
 	}
-
-	postsCh := make(chan []blogPostsLink)
-	errCh := make(chan error)
+	postsCh := make(chan blogPostsLinks, len(blogs))
+	errCh := make(chan error, len(blogs))
+	doneCh := make(chan bool, 0)
+	toClose := make(chan bool, 0)
 	wg := &sync.WaitGroup{}
 
 	for _, blog := range blogs {
 		wg.Add(1)
 		go func(site string) {
 			defer wg.Done()
-			links := make([]blogPostsLink, 0)
+			links := make([]string, 0)
 			err := _crawl(site, site, &links)
 			if err != nil {
 				errCh <- err
+				return
 			} else {
-				postsCh <- links
+				linksForSite := blogPostsLinks{
+					site:  site,
+					links: links,
+				}
+				postsCh <- linksForSite
 			}
 			if n := len(links) - 1; n > 0 {
-				err = updateLastSiteVisited(site, links[n].link)
+				err = updateLastSiteVisited(site, links[n])
 				if err != nil {
 					errCh <- err
 				}
 			}
-
 		}(blog)
 	}
 
@@ -363,48 +364,67 @@ func crawl() (map[string][]string, error) {
 		wg.Wait()
 		close(postsCh)
 		close(errCh)
+		for {
+			select {
+			case _, ok := <-toClose:
+				if !ok {
+					close(doneCh)
+					return
+				}
+			default:
+				doneCh <- true
+			}
+		}
 	}()
 
 	siteLinksMap := make(map[string][]string)
 
-	for linksSlice := range postsCh {
-		blog := linksSlice[0].site
-		_, ok := siteLinksMap[blog]
-		if !ok {
-			siteLinksMap[blog] = make([]string, 0)
-		}
-		for _, link := range linksSlice {
-			siteLinksMap[blog] = append(siteLinksMap[blog], link.link)
+	for {
+		select {
+		case blogLinks, is_open := <-postsCh:
+			if !is_open {
+				postsCh = nil
+			} else {
+				siteLinksMap[blogLinks.site] = blogLinks.links
+			}
+		case err, is_open := <-errCh:
+			if !is_open {
+				errCh = nil
+			} else {
+
+				fmt.Println(err)
+			}
+		case <-doneCh:
+			if postsCh == nil && errCh == nil {
+				close(toClose)
+				return siteLinksMap, nil
+			}
 		}
 	}
-	for err := range errCh {
-		fmt.Println(err)
-	}
-	return siteLinksMap, nil
 }
 
-func run() error {
+func run() (map[string][]string, error) {
 	// crawl
-	site_links_map, err := crawl()
+	siteLinksMap, err := crawl()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// update the database for the new posts
-	for blog, posts := range site_links_map {
+	for blog, posts := range siteLinksMap {
 		for _, post := range posts {
 			ok, err := addNewPostIfNotExist(blog, post)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if ok {
 				err = addMail(blog, post)
 				if err != nil {
-					return err
+					return nil, err
 				}
 			}
 		}
 	}
-	return nil
+	return siteLinksMap, nil
 }
 
 func main() {
@@ -415,8 +435,8 @@ func main() {
 	removeFlag := flag.String("remove", "", "Remove site from watchlist")
 	crawlFlag := flag.Bool("crawl", false, "Crawl all the blog sites curently in the blogs table (watchlist)")
 
-	listPostsFlag := flag.NewFlagSet("listPosts", flag.ExitOnError)
-	updateFlag := flag.NewFlagSet("updateLastLink", flag.ExitOnError)
+	listPostsFlag := flag.NewFlagSet("list-posts", flag.ExitOnError)
+	updateFlag := flag.NewFlagSet("update-last-link", flag.ExitOnError)
 
 	// Define multiple flags for the FlagSet
 	var (
@@ -425,69 +445,92 @@ func main() {
 		flagSite     = listPostsFlag.String("site", "", "web address of the blog site")
 	)
 
-	fmt.Println(strings.Join(os.Args, " "))
-
 	// Check if command and flags are provided
+	if len(os.Args) < 2 {
+		log.Println("no command input specified")
+		return
+	}
+
 	if len(os.Args) <= 3 {
 		flag.Parse()
 
 		if *migrateFlag {
-			fmt.Println("migrate")
 			err := migrate()
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err.Error())
+				return
 			}
+			fmt.Println("Database 'blogs.sqlite3' created successfully")
+			fmt.Println("Tables 'blogs', 'posts', and 'mails' initialized")
+			return
 		}
 
 		if *exploreFlag != "" {
-			fmt.Println("explore")
 			if err := addNewSite(*exploreFlag, *exploreFlag); err != nil {
-				log.Fatal(err)
+				fmt.Println(err.Error())
+				return
 			}
+			fmt.Println("New blog added to watchlist:")
+			fmt.Printf("site: %s\n", *exploreFlag)
+			fmt.Printf("last link: %s\n", *exploreFlag)
+			return
 		}
 
 		if *listFlag {
-			fmt.Println("list")
 			sites, err := listAllSites()
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err.Error())
+				return
 			}
-			for site, lastLink := range sites {
-				fmt.Printf("%s %s\n", site, lastLink)
+			for site, lastPost := range sites {
+				fmt.Printf("%s %s\n", site, lastPost)
 			}
 		}
 		if *removeFlag != "" {
-			fmt.Println("remove")
 			if err := removeSite(*removeFlag); err != nil {
-				log.Fatal(err)
+				fmt.Println(err.Error())
+				return
 			}
+			fmt.Printf("%s removed from the watch list.\n", *removeFlag)
+			return
 		}
 		if *crawlFlag {
-			fmt.Println("crawl")
-			if err := run(); err != nil {
-				log.Fatal(err)
+			siteLinksMap, err := run()
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+			for blog, posts := range siteLinksMap {
+				fmt.Printf("Number of new blog-posts discovered for the site %s: %d", blog, len(posts))
 			}
 		}
-	} else if os.Args[1] == "updateLastLink" {
+	} else if os.Args[1] == "update-last-link" {
 		updateFlag.Parse(os.Args[2:])
 
 		// Check individual flags
 		if *flagBlogSite != "" && *flagLastLink != "" {
 			err := updateLastSiteVisited(*flagBlogSite, *flagLastLink)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err.Error())
+				return
 			}
+			fmt.Printf("The last link for %s updated to %s\n", *flagBlogSite, *flagLastLink)
+		} else {
+			fmt.Println("For 'update-last-link' sub-command, flags 'site' and 'post' cannot be empty")
 		}
-	} else if os.Args[1] == "listPosts" {
+	} else if os.Args[1] == "list-posts" {
 		listPostsFlag.Parse(os.Args[2:])
 		if *flagSite != "" {
 			blogPosts, err := getPostsForSite(*flagSite)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err.Error())
+				return
 			}
 			for _, bp := range blogPosts {
 				fmt.Println(bp)
 			}
+		} else {
+			fmt.Println("The flag site cannot be empty")
 		}
 	} else {
 		fmt.Println("Invalid command")

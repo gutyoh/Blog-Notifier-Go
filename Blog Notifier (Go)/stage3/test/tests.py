@@ -1,120 +1,259 @@
-# TODO -- WE NEED TO ADD THE CORRECT TESTS FOR STAGE 2
-
-import os
+import multiprocessing
+from .blog_notifier_test_utils import *
 
 from hstest import StageTest, TestedProgram, CheckResult, dynamic_test
 
 
 class TestBlogNotifierCLI(StageTest):
 
-    @staticmethod
-    def create_yaml_file(file_name, content):
-        with open(file_name, 'w') as file:
-            file.write(content)
+    @dynamic_test
+    def test1_crawling_with_flat_multiple_pages(self):
+        # Test crawling a site with multiple pages.
+        program = TestedProgram()
+        output = program.start("--crawl-site", blog_files[FLAT_MULTIPLE_LINKS_TEST][-1])
 
-    @staticmethod
-    def remove_yaml_file(file_name):
-        if os.path.exists(file_name):
-            os.remove(file_name)
+        # Splitting the output into lines for easier assertion
+        links = output.strip().split('\n')
+
+        # Expected links from the example output
+        expected_links = blog_files[FLAT_MULTIPLE_LINKS_TEST][:-1]
+
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong("Not all the links in the blog-site are discovered")
+
+        # # Check if there are no extra links in the output
+        for link in links:
+            if link.endswith(".html"):
+                if link not in expected_links:
+                    return CheckResult.wrong(f"There is an extra link {link} in the output.")
+
+        return CheckResult.correct()
 
     @dynamic_test
-    def test1_valid_credentials_yaml(self):
-        # Create the first YAML file
-        yaml_content_1 = ("mode: mail\n"
-                          "server:\n"
-                          "  host: smtp.gmail.com\n"
-                          "  port: 465\n"
-                          "client:\n"
-                          "  email: sender@example.com\n"
-                          "  password: 123456\n"
-                          "  send_to: recipient@example.net\n"
-                          "telegram:\n"
-                          "  bot_token: abcdef123456\n"
-                          "  channel: mychannel")
-        self.create_yaml_file('credentials.yaml', yaml_content_1)
-
+    def test2_crawling_with_no_hyperlinks(self):
+        # Test crawling a site with no links.
         program = TestedProgram()
-        output = program.start('--config', 'credentials.yaml').strip()
+        output = program.start("--crawl-site", blog_files[NO_LINKS_TEST])
 
-        # Remove the created YAML file
-        self.remove_yaml_file('credentials.yaml')
+        # Splitting the output into lines for easier assertion
+        output = output.strip()
 
-        expected_output = ("mode: mail\n"
-                           "email_server: smtp.gmail.com:465\n"
-                           "client: sender@example.com 123456 recipient@example.net\n"
-                           "telegram: abcdef123456@mychannel")
+        # Expected links from the example output
+        expected_output = f"No blog posts found for {blog_files[NO_LINKS_TEST]}"
 
-        if output != expected_output:
+        # Check if all expected links are present in the output
+        if expected_output not in output:
             return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the first YAML file."
+                f"The output of the program does not match the expected output."
                 f"\nYour program output: {output}"
                 f"\nExpected output: {expected_output}")
 
         return CheckResult.correct()
 
     @dynamic_test
-    def test2_valid_credentials_yaml(self):
-        # Create the second YAML file
-        yaml_content_2 = ("mode: telegram\n"
-                          "server:\n"
-                          "  host: 127.0.0.1\n"
-                          "  port: 2500\n"
-                          "client:\n"
-                          "  email: sender@example.com\n"
-                          "  password: secret\n"
-                          "  send_to: recipient@example.net\n"
-                          "telegram:\n"
-                          "  bot_token: abcd1234\n"
-                          "  channel: mychannel")
-        self.create_yaml_file('credentials.yaml', yaml_content_2)
-
+    def test3_crawling_with_duplicate_links_a(self):
+        # Test crawling a site with multiple pages, this is check for duplicate links.
         program = TestedProgram()
-        output = program.start('--config', 'credentials.yaml').strip()
+        output = program.start("--crawl-site", "https://brianpzaide.github.io/blog-notifier")
 
-        # Remove the created YAML file
-        self.remove_yaml_file('credentials.yaml')
+        # Splitting the output into lines for easier assertion
+        links = output.strip().split('\n')
 
-        expected_output = ("mode: telegram\n"
-                           "email_server: 127.0.0.1:2500\n"
-                           "client: sender@example.com secret recipient@example.net\n"
-                           "telegram: abcd1234@mychannel")
+        # Expected links from the example output
+        expected_links = [
+            "https://brianpzaide.github.io/blog-notifier/a.html",
+            "https://brianpzaide.github.io/blog-notifier/b.html",
+            "https://brianpzaide.github.io/blog-notifier/c.html",
+            "https://brianpzaide.github.io/blog-notifier/d.html",
+            "https://brianpzaide.github.io/blog-notifier/e.html",
+            "https://brianpzaide.github.io/blog-notifier/f.html"
+        ]
 
-        if output != expected_output:
-            return CheckResult.wrong(
-                f"The output of the program does not match the expected output for the second YAML file."
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_output}")
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong(f"The link {link} was not found in the output.")
+
+        links = [link for link in links if link.endswith(".html")]
+
+        if len(links) > len(expected_links):
+            return CheckResult.wrong("The output contains more links than expected, could be duplicate, please return "
+                                     "unique links.")
+
+        # Check if there are no extra links in the output
+        for link in links:
+            if link not in expected_links:
+                return CheckResult.wrong("The output contains extra links, could be duplicate, please return unique "
+                                         "links.")
 
         return CheckResult.correct()
 
     @dynamic_test
-    def test3_invalid_yaml_file(self):
+    def test4_crawling_with_depth_limit_a(self):
+        # checking code with blogs having depth of 2.
         program = TestedProgram()
-        output = program.start('--config', 'nonexistent.yaml').lower().strip()
-        expected_error = "file 'nonexistent.yaml' not found"
-        if 'not found' not in output or not program.is_finished():
-            return CheckResult.wrong(
-                f"The program should print a message mentioning YAML file was not found. "
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_error}")
+        output = program.start("--crawl-site", blog_files[NESTED_LINKS_TEST][-4]).strip()
+
+        # Mocked output for depth 3 limit, assuming known structure
+        expected_links = blog_files[NESTED_LINKS_TEST][-5::-1]
+
+        # Splitting the output into lines for easier assertion
+        links = output.strip().split('\n')
+
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong("Program did not discover all the expected links.")
+
+        links = [link for link in links if link.endswith(".html")]
+        if len(links) > len(expected_links):
+            return CheckResult.wrong(f"The output contains more links than expected, seams like the program crawls "
+                                     f"beyond the depth limit of '3'")
+
         return CheckResult.correct()
 
     @dynamic_test
-    def test4_no_command_input(self):
+    def test5_crawling_with_depth_limit_b(self):
+        # checking code with blogs having depth of 3.
         program = TestedProgram()
-        output = program.start().lower().strip()
-        expected_error = "no command input specified"
+        output = program.start("--crawl-site", blog_files[NESTED_LINKS_TEST][-3]).strip()
 
-        if ('no command' not in output and 'specified' not in output) and not program.is_finished():
-            return CheckResult.wrong(
-                f"The program should print a message mentioning no command input was specified. "
-                f"\nYour program output: {output}"
-                f"\nExpected output: {expected_error}")
+        # Mocked output for depth 3 limit, assuming known structure
+        expected_links = blog_files[NESTED_LINKS_TEST][-4::-1]
+
+        # Splitting the output into lines for easier assertion
+        links = output.strip().split('\n')
+
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong("Program did not discover all the expected links.")
+
+        links = [link for link in links if link.endswith(".html")]
+        if len(links) > len(expected_links):
+            return CheckResult.wrong(f"The output contains more links than expected, seams like the program crawls "
+                                     f"beyond the depth limit of '3'")
+
         return CheckResult.correct()
 
-    # Additional edge case tests can be added here ...
+    @dynamic_test
+    def test6_crawling_with_depth_limit_c(self):
+        # checking code with blogs having depth of more than 3.
+        program = TestedProgram()
+        output = program.start("--crawl-site", blog_files[NESTED_LINKS_TEST][-1]).strip()
+
+        # Mocked output for depth 3 limit, assuming known structure
+        expected_links = blog_files[NESTED_LINKS_TEST][-2:-5:-1]
+
+        # Splitting the output into lines for easier assertion
+        links = output.strip().split('\n')
+
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong("Program did not discover all the expected links.")
+
+        links = [link for link in links if link.endswith(".html")]
+        if len(links) > len(expected_links):
+            return CheckResult.wrong(f"The output contains more links than expected, seams like the program crawls "
+                                     f"beyond the depth limit of '3'")
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test7_crawling_with_duplicate_links_b(self):
+        # Test checks for cross-referencing posts (posts that have references of each other). Checks whether the code
+        # breaks out of infinite recursion by obeying a depth limit of '3'.
+        program = TestedProgram()
+        output = program.start("--crawl-site", blog_files[CYCLIC_LINKS_TEST][-1])
+
+        # Splitting the output into lines for easier assertion
+        links = output.strip().split('\n')
+
+        # Expected links from the example output
+        expected_links = blog_files[CYCLIC_LINKS_TEST]
+
+        links = [link for link in links if link.endswith(".html")]
+
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong("Program did not discover all the expected links.")
 
 
-# Run the test cases
+        if len(links) > len(expected_links):
+            return CheckResult.wrong(f"The output contains duplicate links.")
+
+        # Check if there are no extra links in the output
+        for link in links:
+            if link not in expected_links:
+                return CheckResult.wrong(f"There is an extra link {link} in the output.")
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test8_crawling_with_nested_and_flat_posts(self):
+        # Test checks for blogs that have flat blog-posts(blog-post that has no hyperlinks) or nested blog-posts(
+        # blog-post that have hyperlinks to other blog-posts) .
+        program = TestedProgram()
+        output = program.start("--crawl-site", blog_files[NESTED_AND_FLAT_LINKS_TEST][-1])
+
+        # Splitting the output into lines for easier assertion
+
+        links = output.strip()
+
+        # Expected links from the example output
+        expected_links = blog_files[NESTED_AND_FLAT_LINKS_TEST][-2::-1]
+
+        # Check if all expected links are present in the output
+        for link in expected_links:
+            if link not in links:
+                return CheckResult.wrong("Program did not discover all the expected links.")
+
+        links = output.strip().split('\n')
+        links = [link for link in links if link.endswith(".html")]
+        # Check if there are no extra links in the output
+        for link in links:
+            if link not in expected_links:
+                return CheckResult.wrong(f"There is an extra link {link} in the output.")
+
+        return CheckResult.correct()
+
+    @dynamic_test
+    def test9_crawling_with_invalid_url(self):
+        # checks how the code handles the case when given url of a non-existing blog
+        non_existing_blog = f"http://{generate_random_text(4)}.html"
+        # Test crawling with an invalid URL.
+        program = TestedProgram()
+        output = program.start("--crawl-site", non_existing_blog).strip().lower()
+
+        # Expected error message or indication for an invalid URL
+        expected_output = f"could not reach the site: {non_existing_blog}"
+
+        # Check if the output contains indication of an error
+        if expected_output not in output:
+            return CheckResult.wrong("The output does not indicate an error occurred with an invalid URL.")
+        return CheckResult.correct()
+
+
+# Run the tests
 if __name__ == '__main__':
-    TestBlogNotifierCLI().run_tests()
+    http_server_process: multiprocessing.Process = None
+    try:
+        # creating fake blog(just html files) for testing
+        create_blog_site_with_no_posts()
+        create_flat_blog_site_with_multiple_posts()
+        create_blog_site_with_nested_posts(5)
+        create_blog_site_with_nested_and_flat_posts()
+        # starting python's http.server
+        http_server_process = multiprocessing.Process(target=run_http_server, args=(8000,))
+        http_server_process.start()
+        # running tests
+        TestBlogNotifierCLI().run_tests()
+    finally:
+        # stopping python's http.server
+        http_server_process.kill()
+        # removing all the html files created
+        remove_fake_blog()
