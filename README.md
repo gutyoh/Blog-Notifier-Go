@@ -30,3 +30,8 @@ Working on this project offers valuable opportunities to master diverse skills i
 - Sending emails
 - Implementing concurrency
 - Executing CRUD (Create, Read, Update, Delete) operations
+
+## Feedback and Contributions
+Blog-Notifier is currently in the Beta stage, and your feedback is invaluable to us. We would highly appreciate it if you could check out the project [here](https://hyperskill.org/projects/437) and share your thoughts. 
+
+Contributions are also highly appreciated! If you would like to contribute to the project, please feel free to submit any suggestions or pull requests to help improve this project.
